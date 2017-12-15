@@ -61,6 +61,24 @@ def most_used_words():
             # summ += value
 
 
+def generate_corpus():
+    out_num = open("numeric_corpus.txt", 'wb')
+    out_word = open("verbal_corpus.txt", 'wb')
+    for word in full_corpus.split(" "):
+        if word != "":
+            try:
+                count = dictionary[word.lower()]
+                output = str(count) + "\n" if count >= 4 else "0" + "\n"
+
+            except:
+                output = str(0) + "\n"  # this word has less than 4 occurrences
+            out_num.write(output)
+            out_word.write(word + "\n")
+    out_num.close()
+    out_word.close()
+
+
+# main
 dictionary = dict()  # keep count
 full_corpus = []
 with open("corpus.json", 'rb') as corpus:
@@ -71,22 +89,10 @@ for tweet in tweets:
     words = clean(tweet["text"])
     add_to_dict()
     full_corpus.append(words)
+
 full_corpus = "".join(full_corpus)  # assemble into singe blob of text
-
-out_num = open("numeric_corpus.txt", 'wb')
-out_word = open("verbal_corpus.txt", 'wb')
-for word in full_corpus.split(" "):
-    if word != "":
-        try:
-            count = dictionary[word.lower()]
-            output = str(count) + "\n" if count >= 4 else "0" + "\n"
-
-        except:
-            output = str(0) + "\n"  # this word has less than 4 occurrences
-        out_num.write(output)
-        out_word.write(word + "\n")
-
-# print summ  # total words in corpus
+generate_corpus()
+print "done"
 
 
 ### visual analysis
