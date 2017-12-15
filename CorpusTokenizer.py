@@ -13,8 +13,8 @@ class Tokenizer:
         tw = text
         tw = re.sub("(https?://.*)|(www\..*)|(t\.co.*)|(amzn\.to.*)( |$)", "", tw)  # remove links
         tw = re.sub("RE:", "", tw)
-        tw = re.sub("#", "%TAG%", tw)  # hashtagging
         tw = re.sub("Donald J\. Trump", "", tw)
+        tw = re.sub("#", "%TAG%", tw)  # hashtagging
         tw = re.sub("@|\.@", "%AT%", tw)  # @
         tw = re.sub("\.\.+", "%ELLIPSE%", tw)  # ellipses
         tw = re.sub("&amp;", "%AMPERSAND%", tw)
@@ -25,7 +25,7 @@ class Tokenizer:
         tw = re.sub("\?", " ? ", tw)
         tw = re.sub("--|-", " ", tw)
         tw = re.sub("\(cont\)", "", tw)
-        tw = re.sub("[^a-zA-Z0-9,?!%&' ]", "", tw)
+        tw = re.sub("[^a-zA-Z0-9,?!%&' .]", "", tw)  # remove pretty much everything
         tw = re.sub("%AT%", "@", tw)
         tw = re.sub("%ELLIPSE% ?", " ... ", tw)
         tw = re.sub(" ?%AMPERSAND% ?", " & ", tw)
