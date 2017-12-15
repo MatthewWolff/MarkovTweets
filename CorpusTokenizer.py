@@ -21,24 +21,20 @@ def clean(text):
     tw = re.sub("\?", " ? ", tw)
     tw = re.sub("--|-", " ", tw)
     tw = re.sub("\(cont\)", "", tw)
-    # tw = ''.join(ch for ch in tw if ch.isalnum() or ch is "%" or ch is " ")
-    tw = re.sub("[^a-zA-Z0-9,?!% ]", "", tw)
+    tw = re.sub("[^a-zA-Z0-9,?!%&' ]", "", tw)
     tw = re.sub("%AT%", "@", tw)
-    tw = re.sub("%ELLIPSE%", " ... ", tw)
+    tw = re.sub("%ELLIPSE% ?", " ... ", tw)
     tw = re.sub(" ?%AMPERSAND% ?", " & ", tw)
     tw = re.sub("%HYPHEN%", "-", tw)
     tw = re.sub("%TAG%", " #", tw)
+    last = tw[-5:].strip()  # check to see if we need to add a period
+    if "..." not in last and "?" not in last and "!" not in last and "." not in last:
+        tw += " . "
     return tw
 
 
-dictionary = dict()  # keep count
-with open("corpus.json", 'rb') as corpus:
-    tweets = json.loads(corpus.read())
-for tweet in tweets:
-    if tweet["is_retweet"] or "Donald Trump" in tweet["text"]:  # ignore third person
-        continue
-    words = clean(tweet["text"]).split(" ")
-    for word in words:
+def add_to_dict():
+    for word in words.split(" "):
         word = word.strip().lower()
         if word != "":
             if word in dictionary:  # keep count
@@ -46,19 +42,49 @@ for tweet in tweets:
             else:
                 dictionary[word] = 1
 
-i = 0
-# summ = 0
-x_list = []
-y_list = []
-# out_file = open("outfile.csv", 'wb')
-for key, value in sorted(dictionary.iteritems(), reverse=True, key=lambda (k, v): (v, k)):
-    i += 1
-    x_list.append(i)
-    y_list.append(value)
-    if value > 3:
-        print "%d - %s: %s" % (i, key, value)
-        # summ += value
-    # out_file.write(str(value) + "\n")
+
+def useless(tw):
+    return tw["is_retweet"] or "Donald Trump" in tw["text"]
+
+
+def most_used_words():
+    i = 0  # ranking of word frequency
+    x_list = []
+    y_list = []
+    # summ = 0
+    for key, value in sorted(dictionary.iteritems(), reverse=True, key=lambda (k, v): (v, k)):
+        i += 1
+        x_list.append(i)
+        y_list.append(value)
+        if value > 3:  # ignore words used less than four times
+            print "%d - %s: %s" % (i, key, value)
+            # summ += value
+
+
+dictionary = dict()  # keep count
+full_corpus = []
+with open("corpus.json", 'rb') as corpus:
+    tweets = json.loads(corpus.read())
+for tweet in tweets:
+    if useless(tweet):  # ignore third person
+        continue
+    words = clean(tweet["text"])
+    add_to_dict()
+    full_corpus.append(words)
+full_corpus = "".join(full_corpus)  # assemble into singe blob of text
+
+out_num = open("numeric_corpus.txt", 'wb')
+out_word = open("verbal_corpus.txt", 'wb')
+for word in full_corpus.split(" "):
+    if word != "":
+        try:
+            count = dictionary[word.lower()]
+            output = str(count) + "\n" if count >= 4 else "0" + "\n"
+
+        except:
+            output = str(0) + "\n"  # this word has less than 4 occurrences
+        out_num.write(output)
+        out_word.write(word + "\n")
 
 # print summ  # total words in corpus
 
