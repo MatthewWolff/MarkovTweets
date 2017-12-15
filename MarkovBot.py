@@ -9,7 +9,7 @@ import tweepy
 from keys import key, email_key  # move to other file
 
 """
-This is a bot that uses markov chaining on the corpus of tweets made by @realDonaldTrump
+This is a bot that uses markov chaining on the corpus of tweets made by @realDonaldDrumpf
 It utilizes markov chains of up to 4 words longs.
 It is particularly efficient in its analysis of the corpus.
 Using http://trumptwitterarchive.com/ as the corpus.
