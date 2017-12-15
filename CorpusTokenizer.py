@@ -6,7 +6,7 @@ from os.path import isfile, join
 
 
 def clean(text):
-    tw = tweet["text"]
+    tw = text
     tw = re.sub("(https?://.*)|(www\..*)|(t\.co.*)|(amzn\.to.*)( |$)", "", tw)  # remove links
     tw = re.sub("RE:", "", tw)
     tw = re.sub("#", "%TAG%", tw)  # hashtagging
@@ -47,19 +47,20 @@ for tweet in tweets:
                 dictionary[word] = 1
 
 i = 0
-# sum = 0
+# summ = 0
 x_list = []
 y_list = []
-out_file = open("outfile.csv", 'wb')
+# out_file = open("outfile.csv", 'wb')
 for key, value in sorted(dictionary.iteritems(), reverse=True, key=lambda (k, v): (v, k)):
     i += 1
-    sum += value
     x_list.append(i)
     y_list.append(value)
-    print "%d - %s: %s" % (i, key, value)
-    out_file.write(str(value) + "\n")
+    if value > 3:
+        print "%d - %s: %s" % (i, key, value)
+        # summ += value
+    # out_file.write(str(value) + "\n")
 
-# print sum  # total words in corpus
+# print summ  # total words in corpus
 
 
 ### visual analysis
