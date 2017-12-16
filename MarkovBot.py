@@ -1,12 +1,16 @@
+import os
 import re
 import smtplib
+import subprocess
+import urllib2  # for querying data to scrape
 from datetime import datetime, timedelta
 from multiprocessing import Process
-from subprocess import check_output
 from time import sleep, strftime
 
 import tweepy
-from keys import key, email_key  # move to other file
+from Tokenizer import generate
+from bs4 import BeautifulSoup
+from keys import email_key  # move to other file
 
 """
 This is a bot that uses markov chaining on the corpus of tweets made by @realDonaldDrumpf
@@ -57,15 +61,51 @@ def alert(subject="Error Occurred", text="a bot has encountered an error."):
 
 
 class MarkovBot:
-    def __init__(self, key, active_hours=range(24), hyperactive=[]):
+    def __init__(self, api_key, other_handle, active_hours=range(24)):
         # authorize
-        auth = tweepy.OAuthHandler(key["consumer_key"], key["consumer_secret"])
-        auth.set_access_token(key["access_token"], key["access_token_secret"])
+        auth = tweepy.OAuthHandler(api_key["consumer_key"], api_key["consumer_secret"])
+        auth.set_access_token(api_key["access_token"], api_key["access_token_secret"])
         self.api = tweepy.API(auth)
         self.me = str(self.api.me().screen_name)
+        self.pretend = other_handle.lower()
         self.active = active_hours
-        self.replied_tweets = "replied_tweets_%s.txt" % self.me  # custom reply file
-        self.hyperactive = hyperactive
+        self.replied_tweets = "bot_files/%s_replied_tweets.txt" % self.pretend  # custom reply file
+        self.log = "bot_files/{0}/{0}_log.txt".format(self.pretend)
+        self.corpus = "bot_files/{0}/{0}.json".format(self.pretend)
+        if not os.path.exists(self.pretend + self.corpus):  # scrape for their tweets
+            self.scrape()
+
+    def scrape(self):
+        self._scrape_ids(self.get_join_date())
+        self._meta_data()
+        generate(self.pretend)
+
+    def _scrape_ids(self, start):
+        if not os.path.exists("bot_files/%s" % self.pretend):
+            os.mkdir("bot_files/%s" % self.pretend)
+        scrape = "python3 twitter_scraping/scrape.py {} {}".format(self.pretend, start)
+        process = subprocess.Popen(scrape.split(), stdout=subprocess.PIPE)
+        output, __ = process.communicate()
+        print output
+
+    def _meta_data(self):
+        meta_data = "python3 twitter_scraping/get_metadata.py %s" % self.pretend
+        process = subprocess.Popen(meta_data.split(), stdout=subprocess.PIPE)
+        output, __ = process.communicate()
+        print output
+
+    def get_join_date(self):
+        page = urllib2.urlopen("https://twitter.com/" + self.pretend)
+        soup = BeautifulSoup(page, "html.parser")
+        date_string = str(soup.find("span", {"class": "ProfileHeaderCard-joinDateText"})["title"]).split(" - ")[1]
+        date_string = str(0) + date_string if date_string[1] is " " else date_string
+        return str(datetime.strptime(date_string, "%d %b %Y"))[0:11]
+
+    def tweet(self, text=None):
+        if text:
+            self.api.update_status(text)
+        else:
+            pass
 
     def clear_tweets(self):
         """
@@ -108,66 +148,12 @@ class MarkovBot:
         :param tweet: tweet to respond to
         :return: the tweet to make in response
         """
-        username = tweet.user.screen_name
+        username = str(tweet.user.screen_name)
         text = tweet.full_text
         if username != self.me:  # don't respond to self
             if not is_replied(tweet):
-                if "translate" in text:
-                    # grab everything after the "translate:"
-                    expr = re.compile(".+translate")
-                    start = expr.search(text).end()
-                    translated = words_to_dna(text[start:len(text)])
-                    if len(translated) < 3:
-                        response = "@{0} Sorry @{0}, ".format(username)
-                        response += "the translation was too short. Try avoiding "
-                        response += "the letters B,J,O,U,X,Z, or any emoji!"
-                        error_msg = RED + "Translation for "
-                        error_msg += "@%s failed - too short\n" % username + RESET
-                        with open("bot_log.txt", "ab") as bot_log:
-                            bot_log.write(error_msg)
-                        print error_msg
-                        return self.api.update_status(response, tweet.id)
-
-                    # translated can be up 3 tweets of text... break apart and reply
-                    to_tweet = divide_tweet(translated, username)
-                    if to_tweet == -1:
-                        response = "@{0} Sorry @{0}, ".format(username)
-                        response += "the translation was too long. But congrats on "
-                        response += "figuring out how to fit so many characters in!"
-                        error_msg = RED + "Translation for "
-                        error_msg += "@%s failed - too long\n" % username + RESET
-                        with open("bot_log.txt", "ab") as bot_log:
-                            bot_log.write(error_msg)
-                        print error_msg
-                        return self.api.update_status(response, tweet.id)
-
-                    recent = None
-                    for new_tweet in to_tweet:
-                        with open("bot_log.txt", "ab") as bot_log:
-                            bot_log.write("translated " + new_tweet + "\n")
-                        print YELLOW + "translated " + BOLDWHITE + new_tweet + RESET
-                        recent = self.api.update_status(status=new_tweet,
-                                                        in_reply_to_status_id=(tweet.id
-                                                                               if recent is None
-                                                                               else recent.id))
-                else:  # do a full convert of their handle + translate back
-                    response = "@%s\n" % username
-                    response += double_stranded_dna(username)
-                    response += "\n(%s)" % dna_to_words(words_to_dna(username))
-                    if len(response) <= TWEET_MAX_LENGTH:
-                        with open("bot_log.txt", "ab") as bot_log:
-                            bot_log.write("responded  " + response + "\n")
-                        print YELLOW + "responded " + BOLDWHITE + response + RESET
-                    else:
-                        response = "@%s, your handle is too long!\n" % username
-                        response += "Try doing a custom translation instead, by tw"
-                        response += "eeting at me using the keyword \"translate\"?"
-                        error_msg = RED + "Translation for "
-                        error_msg += "@%s failed - handle too long\n" % username + RESET
-                        with open("bot_log.txt", "ab") as bot_log:
-                            bot_log.write(error_msg)
-                        print error_msg
-                    return self.api.update_status(response, tweet.id)
+                # TODO response
+                pass
 
     def divide_tweet(self, long_tweet, username):
         """
@@ -220,8 +206,3 @@ class MarkovBot:
                 print RED + e.api_code + RESET
 
             sleep(30)
-
-
-if __name__ == '__main__':
-    bot = MarkovBot(key)
-    print bot.is_active()
