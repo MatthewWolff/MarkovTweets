@@ -104,9 +104,6 @@ def generate(handle):
     dat_boi.generate(handle)
     print "done"
 
-
-if __name__ == "__main__":
-    generate("joshlukas97")
 ### visual analysis
 # R commands
 # input <- read.csv("/Users/matthew/Desktop/College/Junior/CS/CS540HW5/WARC201709/outfile.csv",header = TRUE)
