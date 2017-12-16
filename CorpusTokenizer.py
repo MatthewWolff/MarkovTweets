@@ -3,10 +3,10 @@ import re
 
 
 class Tokenizer:
-    def __init__(self, handle):
+    def __init__(self):
         self.dictionary = dict()
         self.full_corpus = []
-        self.who_am_i = handle
+        self.who_am_i = ""
 
     @staticmethod
     def clean(text):
@@ -78,7 +78,8 @@ class Tokenizer:
         out_num.close()
         out_word.close()
 
-    def generate(self):
+    def generate(self, handle):
+        self.who_am_i = handle
         with open("corpus.json", 'rb') as corpus:
             tweets = json.loads(corpus.read())
         for tweet in tweets:
@@ -93,8 +94,17 @@ class Tokenizer:
         print "done with %s corpus generation" % self.who_am_i
 
 
+def generate(handle):
+    """
+    Generates the corpuses given a twitter handle
+    :param handle: the handle of the account in question
+    """
+    # TODO scrap for the corpus.json - https://github.com/bpb27/twitter_scraping
+    Tokenizer().generate(handle)
+
+
 if __name__ == '__main__':
-    Tokenizer("realDonaldTrump").generate()
+    generate("realDonaldTrump")
 
 ### visual analysis
 # R commands
