@@ -49,7 +49,7 @@ def increment_day(date, i):
     return date + datetime.timedelta(days=i)
 
 
-print("Scraping from:")
+print("Scraping from: {} to present".format(argv[2]))
 by = 31  # month at a time
 for day in range(days)[::by]:
     d1 = format_day(increment_day(start, 0))
@@ -101,5 +101,6 @@ except FileNotFoundError:
 with open(twitter_ids_filename, 'w') as outfile:
     json.dump(data_to_write, outfile)
 
+print("found {} tweets".format(len(data_to_write)))
 print('all done here')
 driver.close()

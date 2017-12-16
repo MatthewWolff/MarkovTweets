@@ -16,23 +16,24 @@ class Tokenizer:
         tw = re.sub("RE:", "", tw)
         tw = re.sub("Donald J\. Trump", "", tw)
         tw = re.sub("#", "%TAG%", tw)  # hashtagging
-        tw = re.sub("@|\.@", "%AT%", tw)  # @
-        tw = re.sub("\.\.+", "%ELLIPSE%", tw)  # ellipses
-        tw = re.sub("&amp;", "%AMPERSAND%", tw)
+        tw = re.sub("@|\.@", "%AT%", tw)  # @, note: it gets rid of .@'s
+        tw = re.sub("\.\.\.+", "%ELLIPSE%", tw)  # collapses long ellipses
+        tw = re.sub("&amp;", "%AMPERSAND%", tw)  # convert into &
         tw = re.sub("(?<=[a-zA-Z])-(?=[a-zA-Z])", "%HYPHEN%", tw)
         tw = re.sub("(?<=[a-zA-Z])\.( |$)", " . ", tw)  # punctuation
-        tw = re.sub("!+", " ! ", tw)
-        tw = re.sub("(?<=[^0-9])?,(?=[^0-9])", " , ", tw)
-        tw = re.sub("\?+", " ? ", tw)
-        tw = re.sub("--|-|[()<>]", " ", tw)
-        tw = re.sub("\(cont\)", "", tw)
-        tw = re.sub("[^a-zA-Z0-9,?!%&' .]", "", tw)  # remove pretty much everything, including emoji
+        tw = re.sub("!+", " ! ", tw)  # exclamation (collapses)
+        tw = re.sub("(?<=[^0-9])?,(?=[^0-9])", " , ", tw)  # non-numeric commas
+        tw = re.sub("\?+", " ? ", tw)  # question marks?? (collapses)
+        tw = re.sub("\(cont\)", "", tw) # who does this lmao
+        tw = re.sub("--|-|[()<>]", " ", tw)  # replace these with spaces
+        tw = re.sub("[^a-zA-Z0-9,?!%&' .]", "", tw)  # replace most non alpha-numerics with nothing
+        # re-instate
         tw = re.sub("%AT%", "@", tw)
         tw = re.sub("%ELLIPSE% ?", " ... ", tw)
         tw = re.sub(" ?%AMPERSAND% ?", " & ", tw)
         tw = re.sub("%HYPHEN%", "-", tw)
         tw = re.sub("%TAG%", " #", tw)
-        last = tw[-5:].strip()  # check to see if we need to add a period
+        last = tw[-5:].strip()  # check to see if we need to add a period to their tweet
         if "..." not in last and "?" not in last and "!" not in last and "." not in last:
             tw += " . "
         return tw
@@ -54,12 +55,13 @@ class Tokenizer:
         i = 0  # ranking of word frequency
         x_list = []
         y_list = []
-        for key, value in sorted(self.dictionary.iteritems(), reverse=True, key=lambda (k, v): (v, k)):
-            i += 1
-            x_list.append(i)
-            y_list.append(value)
-            if value > 3:  # ignore words used less than four times
-                print "%d - %s: %s" % (i, key, value)
+        with open(self.path + "_most_used.txt", 'wb') as outfile:
+            for key, value in sorted(self.dictionary.iteritems(), reverse=True, key=lambda (k, v): (v, k)):
+                i += 1
+                x_list.append(i)
+                y_list.append(value)
+                if value > 3:  # ignore words used less than four times
+                    outfile.write("%d - %s: %s\n" % (i, key, value))
 
     def generate_corpus(self):
         out_num = open("{}_num_corpus.txt".format(self.path), 'wb')
@@ -79,7 +81,7 @@ class Tokenizer:
         with open("{}_readable_corpus.txt".format(self.path), "wb") as f:
             f.write(str(self.full_corpus))
 
-    def generate(self, handle):
+    def generate(self, handle):  # creates other pieces of data
         self.path = "bot_files/{0}/{0}".format(handle)
         with open("{}.json".format(self.path), 'rb') as corpus:
             tweets = json.loads(corpus.read())
@@ -92,9 +94,10 @@ class Tokenizer:
 
         self.full_corpus = "".join(self.full_corpus)  # assemble into singe blob of text
         self.generate_corpus()
+        self.most_used_words()
 
 
-def generate(handle):
+def generate_corpus(handle):
     """
     Generates the corpuses given a twitter handle
     :param handle: the handle of the account in question

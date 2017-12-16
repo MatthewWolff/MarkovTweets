@@ -29,7 +29,7 @@ compression = zipfile.ZIP_DEFLATED
 with open('bot_files/{0}/{0}_all_ids.json'.format(user)) as f:
     ids = json.load(f)
 
-print('total tweet ids: {}'.format(len(ids)))
+# print('total tweet ids: {}'.format(len(ids)))
 
 all_data = []
 start = 0

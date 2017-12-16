@@ -8,7 +8,7 @@ from multiprocessing import Process
 from time import sleep, strftime
 
 import tweepy
-from Tokenizer import generate
+from Tokenizer import generate_corpus
 from bs4 import BeautifulSoup
 from keys import email_key  # move to other file
 
@@ -18,6 +18,8 @@ It utilizes markov chains of up to 4 words longs.
 It is particularly efficient in its analysis of the corpus.
 Using http://trumptwitterarchive.com/ as the corpus.
 Partially inspired by https://boingboing.net/2017/11/30/correlation-between-trump-twee.html
+
+TBH a lot of this class is currently unused as I've been focusing on tokenization and corpus generation - 12.16.2017
 """
 
 # constants + terminal color codes
@@ -72,13 +74,13 @@ class MarkovBot:
         self.replied_tweets = "bot_files/%s_replied_tweets.txt" % self.pretend  # custom reply file
         self.log = "bot_files/{0}/{0}_log.txt".format(self.pretend)
         self.corpus = "bot_files/{0}/{0}.json".format(self.pretend)
-        if not os.path.exists(self.pretend + self.corpus):  # scrape for their tweets
+        if not os.path.exists(self.corpus):  # scrape for their tweets
             self.scrape()
+        generate_corpus(self.pretend)
 
     def scrape(self):
         self._scrape_ids(self.get_join_date())
         self._meta_data()
-        generate(self.pretend)
 
     def _scrape_ids(self, start):
         if not os.path.exists("bot_files/%s" % self.pretend):
@@ -103,7 +105,7 @@ class MarkovBot:
 
     def tweet(self, text=None):
         if text:
-            self.api.update_status(text)
+            return self.api.update_status(text)
         else:
             pass
 
