@@ -24,7 +24,7 @@ class Tokenizer:
         tw = re.sub("!+", " ! ", tw)  # exclamation (collapses)
         tw = re.sub("(?<=[^0-9])?,(?=[^0-9])", " , ", tw)  # non-numeric commas
         tw = re.sub("\?+", " ? ", tw)  # question marks?? (collapses)
-        tw = re.sub("\(cont\)", "", tw) # who does this lmao
+        tw = re.sub("\(cont\)", "", tw)  # who does this lmao
         tw = re.sub("--|-|[()<>]", " ", tw)  # replace these with spaces
         tw = re.sub("[^a-zA-Z0-9,?!%&' .]", "", tw)  # replace most non alpha-numerics with nothing
         # re-instate
@@ -56,6 +56,7 @@ class Tokenizer:
         x_list = []
         y_list = []
         with open(self.path + "_most_used.txt", 'wb') as outfile:
+            outfile.write("~ Most Frequently Used Words ~\n")
             for key, value in sorted(self.dictionary.iteritems(), reverse=True, key=lambda (k, v): (v, k)):
                 i += 1
                 x_list.append(i)

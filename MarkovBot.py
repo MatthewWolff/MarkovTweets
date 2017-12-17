@@ -11,6 +11,8 @@ import tweepy
 from Tokenizer import generate_corpus
 from bs4 import BeautifulSoup
 from keys import email_key  # move to other file
+from twitter_scraping.get_metadata import build_json
+from twitter_scraping.scrape import scrape
 
 """
 This is a bot that uses markov chaining on the corpus of tweets made by @realDonaldDrumpf
@@ -68,6 +70,7 @@ class MarkovBot:
         auth = tweepy.OAuthHandler(api_key["consumer_key"], api_key["consumer_secret"])
         auth.set_access_token(api_key["access_token"], api_key["access_token_secret"])
         self.api = tweepy.API(auth)
+        # typical fields
         self.me = str(self.api.me().screen_name)
         self.pretend = other_handle.lower()
         self.active = active_hours
@@ -75,26 +78,9 @@ class MarkovBot:
         self.log = "bot_files/{0}/{0}_log.txt".format(self.pretend)
         self.corpus = "bot_files/{0}/{0}.json".format(self.pretend)
         if not os.path.exists(self.corpus):  # scrape for their tweets
-            self.scrape()
-        generate_corpus(self.pretend)
-
-    def scrape(self):
-        self._scrape_ids(self.get_join_date())
-        self._meta_data()
-
-    def _scrape_ids(self, start):
-        if not os.path.exists("bot_files/%s" % self.pretend):
-            os.mkdir("bot_files/%s" % self.pretend)
-        scrape = "python3 twitter_scraping/scrape.py {} {}".format(self.pretend, start)
-        process = subprocess.Popen(scrape.split(), stdout=subprocess.PIPE)
-        output, __ = process.communicate()
-        print output
-
-    def _meta_data(self):
-        meta_data = "python3 twitter_scraping/get_metadata.py %s" % self.pretend
-        process = subprocess.Popen(meta_data.split(), stdout=subprocess.PIPE)
-        output, __ = process.communicate()
-        print output
+            scrape(self.pretend, start=self.get_join_date())  # can add end date
+            build_json(self.api, handle=self.pretend)
+            generate_corpus(handle=self.pretend)
 
     def get_join_date(self):
         page = urllib2.urlopen("https://twitter.com/" + self.pretend)
@@ -103,11 +89,25 @@ class MarkovBot:
         date_string = str(0) + date_string if date_string[1] is " " else date_string
         return str(datetime.strptime(date_string, "%d %b %Y"))[0:11]
 
-    def tweet(self, text=None):
-        if text:
-            return self.api.update_status(text)
+    def tweet(self, text=None, at=None):
+        """
+        General tweeting method. It will divide up long bits of text into multiple messages, and return the first tweet
+        that it makes. Multi-tweets (including to other people) will have second and third messages made in response
+        to self.
+        :param text:
+        :return: the first tweet if successful, else None
+        """
+        if not text:
+            return None
+
+        num_tweets, tweets = self.divide_tweet(text, at)
+        if num_tweets > 0:
+            my_ret = self.api.update_status(tweets[0])
+            for remaining in xrange(1, len(tweets)):
+                self.api.update_status(tweets[remaining])
+            return my_ret  # return first tweet - multi-tweets will be responding to it
         else:
-            pass
+            return None
 
     def clear_tweets(self):
         """
@@ -157,15 +157,16 @@ class MarkovBot:
                 # TODO response
                 pass
 
-    def divide_tweet(self, long_tweet, username):
+    def divide_tweet(self, long_tweet, at=None):
         """
         A method for exceptionally long tweets
+        :rtype: the number of tweets, followed by the tweets
+        :param at: the person you're responding to/at
         :param long_tweet: the long-ass tweet you're trying to make
-        :param username: the person you're responding to
         :return: an array of up to 3 tweets
         """
         # 1 tweet
-        handle = "@" + username + " "
+        handle = "@" + at + " " if at else ""
         my_handle = "@" + self.me
         numbered = len("(x/y) ")
 
@@ -177,24 +178,24 @@ class MarkovBot:
 
         # 1 tweet
         if len(long_tweet) <= single_tweet_length:
-            return [handle + long_tweet]
+            return 1, [handle + long_tweet]
         # too many characters (edge case)
         elif len(long_tweet) >= three_tweets_length:
-            return -1
+            return 0, None
             # 3 tweets
         elif len(long_tweet) > two_tweets_length:
-            return [handle + "(1/3) "
-                    + long_tweet[:first_tweet_length],
-                    my_handle + "(2/3) "
-                    + long_tweet[first_tweet_length: two_tweets_length],
-                    my_handle + "(3/3) "
-                    + long_tweet[two_tweets_length: len(long_tweet)]]
+            return 3, [handle + "(1/3) "
+                       + long_tweet[:first_tweet_length],
+                       my_handle + "(2/3) "
+                       + long_tweet[first_tweet_length: two_tweets_length],
+                       my_handle + "(3/3) "
+                       + long_tweet[two_tweets_length: len(long_tweet)]]
         # 2 tweets
         else:
-            return [handle + "(1/2) "
-                    + long_tweet[: first_tweet_length],
-                    my_handle + "(2/2) "
-                    + long_tweet[first_tweet_length: len(long_tweet)]]
+            return 2, [handle + "(1/2) "
+                       + long_tweet[: first_tweet_length],
+                       my_handle + "(2/2) "
+                       + long_tweet[first_tweet_length: len(long_tweet)]]
 
     def check_tweets(self):
         """tweet upkeep multi-processing method"""
