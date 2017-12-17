@@ -3,12 +3,12 @@ import re
 import smtplib
 import subprocess
 import urllib2  # for querying data to scrape
-from datetime import datetime, timedelta
+from datetime import datetime
 from multiprocessing import Process
 from time import sleep, strftime
 
 import tweepy
-from Tokenizer import generate_corpus
+from Tokenizer import Tokenizer, generate_corpus
 from bs4 import BeautifulSoup
 from keys import email_key  # move to other file
 from twitter_scraping.get_metadata import build_json
@@ -35,66 +35,55 @@ PURPLE = "\033[35m"
 CLEAR = "\033[2J"  # clears the terminal screen
 
 
-# methods
-def get_date(date_string):
-    """
-    Helper method for determining date
-    :param date_string:
-    :return:
-    """
-    date_values = re.split("-", date_string)
-    date_values = [int(i) for i in date_values]
-    return datetime(date_values[0], date_values[1], date_values[2])
-
-
-# move to other file
-def alert(subject="Error Occurred", text="a bot has encountered an error."):
-    """
-    Sends an email to a specified gmail account
-    :param subject: Subject
-    :param text: Body of message
-    """
-    content = 'Subject: %s\n\n%s' % (subject, text)
-    mail = smtplib.SMTP('smtp.gmail.com', 587)
-    mail.ehlo()
-    mail.starttls()
-    mail.login(email_key["username"], email_key["password"])
-    mail.sendmail(email_key["username"], email_key["destination"], content)
-    mail.close()
-    print(RED + "ERROR OCCURRED, EMAIL SENT" + RESET)
-
-
 class MarkovBot:
     def __init__(self, api_key, other_handle, active_hours=range(24)):
         # authorize
         auth = tweepy.OAuthHandler(api_key["consumer_key"], api_key["consumer_secret"])
         auth.set_access_token(api_key["access_token"], api_key["access_token_secret"])
         self.api = tweepy.API(auth)
-        # typical fields
         self.me = str(self.api.me().screen_name)
         self.pretend = other_handle.lower()
         self.active = active_hours
-        self.replied_tweets = "bot_files/%s_replied_tweets.txt" % self.pretend  # custom reply file
-        self.log = "bot_files/{0}/{0}_log.txt".format(self.pretend)
-        self.corpus = "bot_files/{0}/{0}.json".format(self.pretend)
+        self.folder = "bot_files/{0}/".format(self.pretend)
+        self.replied_tweets = self.folder + "{0}_replied_tweets.txt".format(self.pretend)  # custom reply file
+        self.log = self.folder + "{0}_log.txt".format(self.pretend)
+        self.corpus = self.folder + "{0}.json".format(self.pretend)
+        self.check_corpus()
+
+    def check_corpus(self):
+        """
+        Checks if there are pre-existing files or if they will have to be regenerated. If data needs to be scraped
+        the bot will go ahead and do that and immediately generate a corpus for the collected data.
+        """
         if not os.path.exists(self.corpus):  # scrape for their tweets
-            scrape(self.pretend, start=self.get_join_date())  # can add end date
+            print "no corpus.json file found - generating..."
+            if not os.path.exists(self.folder):
+                os.mkdir(self.folder)
+            scrape(user=self.pretend, start=self.get_join_date())  # can add end date
             build_json(self.api, handle=self.pretend)
             generate_corpus(handle=self.pretend)
 
     def get_join_date(self):
+        """
+        Helper method - checks a user's twitter page for the date they joined
+        :return: the "%day %month %year" a user joined
+        """
         page = urllib2.urlopen("https://twitter.com/" + self.pretend)
         soup = BeautifulSoup(page, "html.parser")
         date_string = str(soup.find("span", {"class": "ProfileHeaderCard-joinDateText"})["title"]).split(" - ")[1]
         date_string = str(0) + date_string if date_string[1] is " " else date_string
-        return str(datetime.strptime(date_string, "%d %b %Y"))[0:11]
+        return str(datetime.strptime(date_string, "%d %b %Y"))[0:10]
+
+    def regenerate(self, new_min_frequency):  # change threshold - convenience method ig
+        Tokenizer(occurence_threshold=new_min_frequency).generate(self.pretend)
 
     def tweet(self, text=None, at=None):
         """
         General tweeting method. It will divide up long bits of text into multiple messages, and return the first tweet
         that it makes. Multi-tweets (including to other people) will have second and third messages made in response
         to self.
-        :param text:
+        :param at: who the user is tweeting at
+        :param text: the text to tweet
         :return: the first tweet if successful, else None
         """
         if not text:

@@ -4,9 +4,10 @@ import re
 
 
 class Tokenizer:
-    def __init__(self):
+    def __init__(self, occurence_threshold=4):
         self.dictionary = dict()
         self.full_corpus = []
+        self.threshold = occurence_threshold
         self.path = ""
 
     @staticmethod
@@ -55,35 +56,29 @@ class Tokenizer:
         i = 0  # ranking of word frequency
         x_list = []
         y_list = []
-        with open(self.path + "_most_used.txt", 'wb') as outfile:
-            outfile.write("~ Most Frequently Used Words ~\n")
+        with open(self.path + "_vocab.txt", 'wb') as outfile:
             for key, value in sorted(self.dictionary.iteritems(), reverse=True, key=lambda (k, v): (v, k)):
                 i += 1
                 x_list.append(i)
                 y_list.append(value)
-                if value > 3:  # ignore words used less than four times
-                    outfile.write("%d - %s: %s\n" % (i, key, value))
+                if value >= self.threshold:  # ignore words used less than four times
+                    outfile.write("{1}\n".format(i, key, value))  # ranking, word, num_use
 
     def generate_corpus(self):
-        out_num = open("{}_num_corpus.txt".format(self.path), 'wb')
-        out_word = open("{}_word_corpus.txt".format(self.path), 'wb')
+        out = open("{}_corpus.txt".format(self.path), 'wb')
         for word in self.full_corpus.split(" "):
             if word != "":
                 try:
                     count = self.dictionary[word.lower()]
-                    output = str(count) + "\n" if count >= 4 else "0" + "\n"
-
+                    output = str(count) + "\n" if count >= self.threshold else "0" + "\n"
                 except:
                     output = str(0) + "\n"  # this word has less than 4 occurrences
-                out_num.write(output)
-                out_word.write(word + "\n")
-        out_num.close()
-        out_word.close()
+                out.write(output)
+        out.close()
         with open("{}_readable_corpus.txt".format(self.path), "wb") as f:
             f.write(str(self.full_corpus))
 
-    def generate(self, handle):  # creates other pieces of data
-        self.path = "bot_files/{0}/{0}".format(handle)
+    def process_tweet(self):
         with open("{}.json".format(self.path), 'rb') as corpus:
             tweets = json.loads(corpus.read())
         for tweet in tweets:
@@ -93,6 +88,9 @@ class Tokenizer:
             self.add_to_dict(words)
             self.full_corpus.append(words)
 
+    def generate(self, handle):  # creates other pieces of data
+        self.path = "bot_files/{0}/{0}".format(handle)
+        self.process_tweet()
         self.full_corpus = "".join(self.full_corpus)  # assemble into singe blob of text
         self.generate_corpus()
         self.most_used_words()

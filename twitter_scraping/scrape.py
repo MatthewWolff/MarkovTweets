@@ -34,7 +34,7 @@ def increment_day(date, i):
 def scrape(user, start, end=datetime.datetime.now()):
     user = user.lower()  # pass in twitter handle
     year, month, day = (int(x) for x in start.split("-"))
-    start = datetime.datetime(year, month+1, day)  # year, month, day
+    start = datetime.datetime(year, month, day)  # year, month, day
 
     # only edit these if you're having problems
     delay = 1  # time to wait on each page load before reading the page
@@ -47,9 +47,9 @@ def scrape(user, start, end=datetime.datetime.now()):
     tweet_selector = 'li.js-stream-item'
     ids = []
 
-    print("Scraping from: {} to present".format(start[:11]))
+    print("Scraping from {} to present".format(str(start)[:10]))
     by = 31  # month at a time
-    for day in range(days)[::by]:
+    for __ in range(days)[::by]:
         d1 = format_day(increment_day(start, 0))
         d2 = format_day(increment_day(start, by))
         url = form_url(user, d1, d2)
@@ -83,22 +83,17 @@ def scrape(user, start, end=datetime.datetime.now()):
 
         start = increment_day(start, by)
 
-    try:
+    try:  # attempts to reconcile new tweets with old
         with open(twitter_ids_filename) as f:
             all_ids = ids + json.load(f)
             data_to_write = list(set(all_ids))
-            # print('tweets found on this scrape: ', len(ids))
-            # print('total tweet count: ', len(data_to_write))
-    except FileNotFoundError:
+    except:  # if fails, just writes
         with open(twitter_ids_filename, 'w') as f:
             all_ids = ids
             data_to_write = list(set(all_ids))
-            # print('tweets found on this scrape: ', len(ids))
-            # print('total tweet count: ', len(data_to_write))
 
     with open(twitter_ids_filename, 'w') as outfile:
         json.dump(data_to_write, outfile)
 
-    print("found {} tweets".format(len(data_to_write)))
-    print('all done here...\n')
+    print("found {} tweets\n".format(len(data_to_write)))
     driver.close()
