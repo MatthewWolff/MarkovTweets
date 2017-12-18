@@ -13,6 +13,7 @@ class Chains:
         self.corpus, self.vocab = self.read_corpus_files(handle)
         self.prob_distrib_one = self.survey_one_word()
         self.prob_distrib_two = self.survey_two_word()
+        self.handle = handle
 
     @staticmethod
     def read_corpus_files(handle):
@@ -27,7 +28,7 @@ class Chains:
         first_word = self.two_word(random.random(), 1)  # what word comes after the end of a sentence?
         output.append(first_word)
         hist = first_word
-        for i in xrange(50):
+        while hist is not 12:
             rand = random.random()
             try:
                 next = self.two_word(rand, hist)
@@ -37,10 +38,10 @@ class Chains:
                 break
             output.append(next)
             hist = next
-        print " ".join(map(self.get_word, output))
+        print "@" + self.handle + " says: " + " ".join(map(self.get_word, output))
 
     def get_word(self, index):
-        return self.vocab[index - 1] if 0 < index < len(self.vocab) else None  # we treat 0's as Out Of Vocabulary
+        return self.vocab[index - 1] if 0 < index < len(self.vocab) else "OOV"  # we treat 0's as Out Of Vocabulary
 
     def survey_one_word(self):
         prob_distrib = dict()
@@ -75,16 +76,13 @@ class Chains:
         return hash_map
 
     def two_word(self, rand, hist):
-        print rand
         loci = self.prob_distrib_two[hist] if hist in self.prob_distrib_two else None
         if not loci:  # premature termination, user (AKA i) probably fucked up
-            return None
-        prob_distrib = [0] * len(self.vocab)
+            return 0
+        prob_distrib = [0] * (len(self.vocab) + 1)
         for index in loci:
             if index < len(self.corpus) - 1:
-                prob_distrib[
-                    self.corpus[index + 1]
-                ] += 1 / float(len(loci))
+                prob_distrib[self.corpus[index + 1]] += 1 / float(len(loci))
         total = i = 0
         for prob in prob_distrib:
             if total > rand:

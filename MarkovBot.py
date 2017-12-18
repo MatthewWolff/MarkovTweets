@@ -55,6 +55,7 @@ class MarkovBot:
         Checks if there are pre-existing files or if they will have to be regenerated. If data needs to be scraped
         the bot will go ahead and do that and immediately generate a corpus for the collected data.
         """
+        print "starting bot!\n"
         if not os.path.exists(self.corpus):  # scrape for their tweets
             print "no corpus.json file found - generating..."
             if not os.path.exists(self.folder):
@@ -75,6 +76,7 @@ class MarkovBot:
         return str(datetime.strptime(date_string, "%d %b %Y"))[0:10]
 
     def regenerate(self, new_min_frequency):  # change threshold - convenience method ig
+        print "regenerating corpus with required min frequency at %i...\n" % new_min_frequency
         Tokenizer(occurrence_threshold=new_min_frequency).generate(self.pretend)
 
     def tweet(self, text=None, at=None):
