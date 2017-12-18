@@ -5,10 +5,11 @@ import re
 
 class Tokenizer:
     def __init__(self, occurence_threshold=4):
-        self.dictionary = dict()
+        self.dictionary = dict()  # all of the words that have been used
         self.full_corpus = []
         self.threshold = occurence_threshold
         self.path = ""
+        self.vocab = dict()  # the commonly used words (thresholded)
 
     @staticmethod
     def clean(text):
@@ -54,27 +55,23 @@ class Tokenizer:
 
     def most_used_words(self):
         i = 0  # ranking of word frequency
-        x_list = []
-        y_list = []
         with open(self.path + "_vocab.txt", 'wb') as outfile:
             for key, value in sorted(self.dictionary.iteritems(), reverse=True, key=lambda (k, v): (v, k)):
-                i += 1
-                x_list.append(i)
-                y_list.append(value)
                 if value >= self.threshold:  # ignore words used less than four times
+                    i += 1
                     outfile.write("{1}\n".format(i, key, value))  # ranking, word, num_use
+                    self.vocab[key] = i  # basically a normalized, thresholded dictionary
 
     def generate_corpus(self):
-        out = open("{}_corpus.txt".format(self.path), 'wb')
-        for word in self.full_corpus.split(" "):
-            if word != "":
-                try:
-                    count = self.dictionary[word.lower()]
-                    output = str(count) + "\n" if count >= self.threshold else "0" + "\n"
-                except:
-                    output = str(0) + "\n"  # this word has less than 4 occurrences
-                out.write(output)
-        out.close()
+        with open("{}_corpus.txt".format(self.path), 'wb') as out:
+            for word in self.full_corpus.split(" "):
+                if word != "":
+                    try:
+                        count = self.dictionary[word.lower()]
+                        output = str(self.vocab[word.lower()]) + "\n" if count >= self.threshold else "0" + "\n"
+                    except:
+                        output = str(0) + "\n"  # this word has less than 4 occurrences
+                    out.write(output)
         with open("{}_readable_corpus.txt".format(self.path), "wb") as f:
             f.write(str(self.full_corpus))
 
@@ -92,8 +89,8 @@ class Tokenizer:
         self.path = "bot_files/{0}/{0}".format(handle)
         self.process_tweet()
         self.full_corpus = "".join(self.full_corpus)  # assemble into singe blob of text
-        self.generate_corpus()
         self.most_used_words()
+        self.generate_corpus()
 
 
 def generate_corpus(handle):
