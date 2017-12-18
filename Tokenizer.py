@@ -4,12 +4,12 @@ import re
 
 
 class Tokenizer:
-    def __init__(self, occurence_threshold=4):
-        self.dictionary = dict()  # all of the words that have been used
+    def __init__(self, occurrence_threshold=4):
+        self.dictionary = dict()  # all of the words that have been used, plus their uses
         self.full_corpus = []
-        self.threshold = occurence_threshold
+        self.threshold = occurrence_threshold
         self.path = ""
-        self.vocab = dict()  # the commonly used words (thresholded)
+        self.vocab = dict()  # the commonly used words, with index (thresholded and indexed at 1, respectively)
 
     @staticmethod
     def clean(text):

@@ -8,8 +8,8 @@ def is_close(a, b, rel_tol=1e-09, abs_tol=0.0):
 
 
 class Chains:
-    def __init__(self, handle, seed=random.seed(int(datetime.now().strftime("%j")))):
-        self.seed = seed  # seeded by day in year unless otherwise specified
+    def __init__(self, handle, seed=int(datetime.now().strftime("%j"))):
+        random.seed(seed)  # seeded by day in year unless otherwise specified
         self.corpus, self.vocab = self.read_corpus_files(handle)
         self.prob_distrib_one = self.survey_one_word()
         self.prob_distrib_two = self.survey_two_word()
@@ -23,7 +23,24 @@ class Chains:
         return corpus, vocab
 
     def generate_chain(self):
-        pass
+        output = []
+        first_word = self.two_word(random.random(), 1)  # what word comes after the end of a sentence?
+        output.append(first_word)
+        hist = first_word
+        for i in xrange(50):
+            try:
+                rand = random.random()
+                next = self.two_word(rand, hist)
+            except:
+                print "err:", rand, hist
+                print "hehe i died, but here's what i made:"
+                break
+            output.append(next)
+            hist = next
+        print " ".join(map(self.get_word, output))
+
+    def get_word(self, index):
+        return self.vocab[index - 1] if 0 < index < len(self.vocab) else None  # we treat 0's as Out Of Vocabulary
 
     def survey_one_word(self):
         prob_distrib = dict()
@@ -58,13 +75,16 @@ class Chains:
         return hash_map
 
     def two_word(self, rand, hist):
+        print rand
         loci = self.prob_distrib_two[hist] if hist in self.prob_distrib_two else None
         if not loci:  # premature termination, user (AKA i) probably fucked up
             return None
         prob_distrib = [0] * len(self.vocab)
         for index in loci:
-            if index < len(self.corpus):
-                prob_distrib[self.corpus[index + 1]] += 1 / float(len(loci))
+            if index < len(self.corpus) - 1:
+                prob_distrib[
+                    self.corpus[index + 1]
+                ] += 1 / float(len(loci))
         total = i = 0
         for prob in prob_distrib:
             if total > rand:

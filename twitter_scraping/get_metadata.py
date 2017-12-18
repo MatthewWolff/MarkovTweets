@@ -65,3 +65,5 @@ def build_json(api, handle):
     print('creating json master file\n')
     with open(output_file, 'w') as outfile:
         json.dump(results, outfile)
+        import os
+        os.system("say done")  # spooky
