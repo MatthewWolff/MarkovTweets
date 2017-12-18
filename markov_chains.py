@@ -3,11 +3,16 @@ from datetime import datetime
 from time import time
 
 
+def is_close(a, b, rel_tol=1e-09, abs_tol=0.0):
+    return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
+
 class Chains:
     def __init__(self, handle, seed=random.seed(int(datetime.now().strftime("%j")))):
         self.seed = seed  # seeded by day in year unless otherwise specified
         self.corpus, self.vocab = self.read_corpus_files(handle)
         self.prob_distrib_one = self.survey_one_word()
+        self.prob_distrib_two = self.survey_two_word()
 
     @staticmethod
     def read_corpus_files(handle):
@@ -32,32 +37,51 @@ class Chains:
 
     def one_word(self, rand):
         total = i = 0
-        for prob in self.prob_distrib_one:
+        for prob in self.prob_distrib_one.values():
             if total > rand:
                 break
             total += prob
             i += 1
+        # TODO testing - delete
+        # print i-1
+        # print total - self.prob_distrib_one[i-1]
+        # print total
         return i - 1
 
     def survey_two_word(self):
-        prob_distrib = dict()
-        itr = iter(self.corpus)
-        while itr is not None:
-            itr = next(itr)
-            itr
+        hash_map = dict()
+        for i, word in enumerate(self.corpus):
+            if word in hash_map:
+                hash_map[word].append(i)
+            else:
+                hash_map[word] = [i]
+        return hash_map
 
-# 	private static Map<Integer, List<Integer>> survey_two_word(){
-# 		Map<Integer, List<Integer>> map = new HashMap<Integer, List<Integer>>(4700);
-# 		ListIterator<Integer> it = corpus.listIterator();
-# 		while(it.hasNext()) {
-# 			int i = it.nextIndex(), word = it.next(); // better than retrieving word from index each time
-# 			if(map.containsKey(word))
-# 				map.get(word).add(i); // create list of all occurrences of each word
-# 			else
-# 				map.put((Integer) word, new ArrayList<Integer>(Arrays.asList((Integer) i)));
-# 		}
-# 		return map;
-# 	}
+    def two_word(self, rand, hist):
+        loci = self.prob_distrib_two[hist] if hist in self.prob_distrib_two else None
+        if not loci:  # premature termination, user (AKA i) probably fucked up
+            return None
+        prob_distrib = [0] * len(self.vocab)
+        for index in loci:
+            if index < len(self.corpus):
+                prob_distrib[self.corpus[index + 1]] += 1 / float(len(loci))
+        total = i = 0
+        for prob in prob_distrib:
+            if total > rand:
+                break
+            total += prob
+            i += 1
+        # TODO testing - delete
+        # if is_close(0, rand):
+        #     print "%i\n%f\n%f\n" % (i - 1, 0, total)
+        # else:
+        #     print "%i\n%f\n%f\n" % (i - 1, total - self.prob_distrib_one[i - 1], total)
+        # for x in prob_distrib:
+        #     if not is_close(0, x):
+        #         print x
+        return i - 1
+
+# # # Code from my java chatbot
 # 	private static int two_word(Map<Integer, List<Integer>> map, double rand, int h){
 # 		// count up
 # 		Double[] prob_distrib = new Double[4700]; Arrays.fill(prob_distrib, 0.0);
