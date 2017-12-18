@@ -28,8 +28,8 @@ class Chains:
         output.append(first_word)
         hist = first_word
         for i in xrange(50):
+            rand = random.random()
             try:
-                rand = random.random()
                 next = self.two_word(rand, hist)
             except:
                 print "err:", rand, hist
