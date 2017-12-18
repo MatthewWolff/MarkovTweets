@@ -28,16 +28,18 @@ class Chains:
         first_word = self.two_word(random.random(), 1)  # what word comes after the end of a sentence?
         output.append(first_word)
         hist = first_word
-        while hist is not 12:
+        while hist is not 1:
             rand = random.random()
             try:
-                next = self.two_word(rand, hist)
+                nxt = self.two_word(rand, hist)
+                while nxt is 0:
+                    nxt = self.one_word(random.random())
             except:
                 print "err:", rand, hist
                 print "hehe i died, but here's what i made:"
                 break
-            output.append(next)
-            hist = next
+            output.append(nxt)
+            hist = nxt
         print "@" + self.handle + " says: " + " ".join(map(self.get_word, output))
 
     def get_word(self, index):

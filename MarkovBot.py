@@ -76,7 +76,7 @@ class MarkovBot:
         return str(datetime.strptime(date_string, "%d %b %Y"))[0:10]
 
     def regenerate(self, new_min_frequency):  # change threshold - convenience method ig
-        print "regenerating corpus with required min frequency at %i...\n" % new_min_frequency
+        print "regenerating vocab with required min frequency at %i...\n" % new_min_frequency
         Tokenizer(occurrence_threshold=new_min_frequency).generate(self.pretend)
 
     def tweet(self, text=None, at=None):
