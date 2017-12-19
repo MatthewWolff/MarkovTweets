@@ -1,2 +1,4 @@
+Makefile
 keys.py
 *.pyc
+bot_files/test/*
