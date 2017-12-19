@@ -1,4 +1,5 @@
 import random
+import sys
 from datetime import datetime
 from time import time
 
@@ -24,12 +25,16 @@ class Chains:
         return corpus, vocab
 
     def generate_chain(self):
+        print "Beginning chaining..."
         output = []
         first_word = self.two_word(random.random(), 1)  # what word comes after the end of a sentence?
+        while first_word is 0:
+            first_word = self.one_word(random.random())
         output.append(first_word)
         hist = first_word
-        while hist is not 1:
+        while hist is not 1 and len(output) < 100:
             rand = random.random()
+            sys.stdout.write(".")
             try:
                 nxt = self.two_word(rand, hist)
                 while nxt is 0:
@@ -40,7 +45,7 @@ class Chains:
                 break
             output.append(nxt)
             hist = nxt
-        print "@" + self.handle + " says: " + " ".join(map(self.get_word, output))
+        print "\n@" + self.handle + " says: " + " ".join(map(self.get_word, output))
 
     def get_word(self, index):
         return self.vocab[index - 1] if 0 < index < len(self.vocab) else "OOV"  # we treat 0's as Out Of Vocabulary
