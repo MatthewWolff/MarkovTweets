@@ -53,7 +53,7 @@ class Tokenizer:
     def useless(tw):
         return tw["is_retweet"] or "Donald Trump" in tw["text"]
 
-    def most_used_words(self):
+    def generate_vocab(self):
         i = 0  # ranking of word frequency
         with open(self.path + "_vocab.txt", 'wb') as outfile:
             for key, value in sorted(self.dictionary.iteritems(), reverse=True, key=lambda (k, v): (v, k)):
@@ -85,15 +85,15 @@ class Tokenizer:
             self.add_to_dict(words)
             self.full_corpus.append(words)
 
-    def generate(self, handle):  # creates other pieces of data
+    def generate(self, handle):  # silently creates other pieces of data
         self.path = "bot_files/{0}/{0}".format(handle)
         self.process_tweet()
         self.full_corpus = "".join(self.full_corpus)  # assemble into singe blob of text
-        self.most_used_words()
+        self.generate_vocab()
         self.generate_corpus()
 
 
-def generate_corpus(handle):
+def generate(handle):  # verbose, static creation
     """
     Generates the corpuses given a twitter handle
     :param handle: the handle of the account in question

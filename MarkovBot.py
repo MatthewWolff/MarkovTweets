@@ -8,7 +8,7 @@ from multiprocessing import Process
 from time import sleep, strftime
 
 import tweepy
-from Tokenizer import Tokenizer, generate_corpus
+from Tokenizer import Tokenizer, generate
 from bs4 import BeautifulSoup
 from keys import email_key  # move to other file
 from twitter_scraping.get_metadata import build_json
@@ -62,7 +62,7 @@ class MarkovBot:
                 os.mkdir(self.folder)
             scrape(user=self.pretend, start=self.get_join_date())  # can add end date
             build_json(self.api, handle=self.pretend)
-            generate_corpus(handle=self.pretend)
+            generate(handle=self.pretend)
 
     def get_join_date(self):
         """
