@@ -23,7 +23,7 @@ class Tokenizer:
         tw = re.sub("&amp;", "%AMPERSAND%", tw)  # convert into &
         tw = re.sub("(?<=[a-zA-Z])-(?=[a-zA-Z])", "%HYPHEN%", tw)
         tw = re.sub("(?<=[a-zA-Z])\.( |$)", " . ", tw)  # punctuation
-        tw = re.sub("!+", " ! ", tw)  # exclamation (collapses)
+        tw = re.sub("!+", " ! ", tw)  # exclamation!! (collapses)
         tw = re.sub("(?<=[^0-9])?,(?=[^0-9])", " , ", tw)  # non-numeric commas
         tw = re.sub("\?+", " ? ", tw)  # question marks?? (collapses)
         tw = re.sub("\(cont\)", "", tw)  # who does this lmao
