@@ -97,3 +97,4 @@ def scrape(user, start, end=datetime.datetime.now()):
 
     print("found {} tweets\n".format(len(data_to_write)))
     driver.close()
+ 
