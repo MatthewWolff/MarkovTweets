@@ -1,6 +1,5 @@
 import datetime
 import json
-import sys
 from time import sleep
 
 from selenium import webdriver
@@ -75,9 +74,8 @@ def scrape(user, start, end=datetime.datetime.now()):
                 try:
                     id = tweet.find_element_by_css_selector(id_selector).get_attribute('href').split('/')[-1]
                     ids.append(id)
-                except StaleElementReferenceException as e:
+                except StaleElementReferenceException:
                     print('lost element reference', tweet)
-
         except NoSuchElementException:
             print('no tweets on this day')
 
@@ -87,14 +85,12 @@ def scrape(user, start, end=datetime.datetime.now()):
         with open(twitter_ids_filename) as f:
             all_ids = ids + json.load(f)
             data_to_write = list(set(all_ids))
-    except:  # if fails, just writes
-        with open(twitter_ids_filename, 'w') as f:
-            all_ids = ids
-            data_to_write = list(set(all_ids))
+    except IOError:  # if fails, just writes
+        all_ids = ids
+        data_to_write = list(set(all_ids))
 
     with open(twitter_ids_filename, 'w') as outfile:
         json.dump(data_to_write, outfile)
 
     print("found {} tweets\n".format(len(data_to_write)))
     driver.close()
- 

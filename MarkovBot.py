@@ -4,13 +4,12 @@ import smtplib
 import subprocess
 import urllib2  # for querying data to scrape
 from datetime import datetime
-from multiprocessing import Process
 from time import sleep, strftime
 
 import tweepy
 from Tokenizer import Tokenizer, generate
 from bs4 import BeautifulSoup
-from keys import email_key  # move to other file
+from keys import email_key
 from twitter_scraping.get_metadata import build_json
 from twitter_scraping.scrape import scrape
 
@@ -20,8 +19,6 @@ It utilizes markov chains of up to 4 words longs.
 It is particularly efficient in its analysis of the corpus.
 Using http://trumptwitterarchive.com/ as the corpus.
 Partially inspired by https://boingboing.net/2017/11/30/correlation-between-trump-twee.html
-
-TBH a lot of this class is currently unused as I've been focusing on tokenization and corpus generation - 12.16.2017
 """
 
 # constants + terminal color codes
@@ -76,6 +73,10 @@ class MarkovBot:
         return str(datetime.strptime(date_string, "%d %b %Y"))[0:10]
 
     def regenerate(self, new_min_frequency):  # change threshold - convenience method ig
+        """
+        Regenerates the corpus with a non-default minimum word frequency
+        :param new_min_frequency: the minimum number of times a word must appear in the corpus to be in the vocab
+        """
         print "regenerating vocab with required min frequency at %i...\n" % new_min_frequency
         Tokenizer(occurrence_threshold=new_min_frequency).generate(self.pretend)
 
@@ -145,7 +146,7 @@ class MarkovBot:
         text = tweet.full_text
         if username != self.me:  # don't respond to self
             if not is_replied(tweet):
-                # TODO response
+                # TODO automatic response
                 pass
 
     def divide_tweet(self, long_tweet, at=None):

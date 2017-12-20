@@ -1,7 +1,7 @@
 import glob
 import json
 import math
-import sys
+import os
 from time import sleep
 
 import tweepy
@@ -62,8 +62,17 @@ def build_json(api, handle):
         results.append(t)
 
     print('metadata collection complete!\n')
-    print('creating json master file\n')
+
+    if len(results) is 0:
+        raise EmptyCorpusException("Error: No tweets were collected.")
+
+    print('creating json file\n')
     with open(output_file, 'w') as outfile:
         json.dump(results, outfile)
         import os
         os.system("say done")  # spooky
+
+
+class EmptyCorpusException(Exception):
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)

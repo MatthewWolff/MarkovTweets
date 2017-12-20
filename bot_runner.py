@@ -1,11 +1,14 @@
+import sys
+
 from MarkovBot import MarkovBot
 from keys import key
-from markov_chains import Chains
+from markov_chains import Chain
 
-handle = "realdonaldtrump"
+argc = len(sys.argv)
+handle = "realdonaldtrump" if argc is 1 else "".join(sys.argv[1:]).strip().replace(" ", "")
 bot = MarkovBot(key, handle)  # generates corpus if not present
-# bot.regenerate(new_min_frequency=4)
-dick = Chains(handle, max_chains=6, seed=1996)
+# bot.regenerate(new_min_frequency=2)
+dick = Chain(handle, max_chains=6)
 dick.generate_chain()
 
 # did_it_work = bot.tweet("Hello World!")

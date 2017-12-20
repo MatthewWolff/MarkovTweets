@@ -56,6 +56,7 @@ class Tokenizer:
     def generate_vocab(self):
         i = 0  # ranking of word frequency
         with open(self.path + "_vocab.txt", 'wb') as outfile:
+            outfile.write("\n")
             for key, value in sorted(self.dictionary.iteritems(), reverse=True, key=lambda (k, v): (v, k)):
                 if value >= self.threshold:  # ignore words used less than four times
                     i += 1
