@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 from time import sleep
 
 from selenium import webdriver
@@ -41,11 +42,16 @@ def scrape(user, start, end=datetime.datetime.now()):
 
     # don't mess with this stuff
     twitter_ids_filename = 'bot_files/{0}/{0}_all_ids.json'.format(user)
+    if os.path.exists(twitter_ids_filename):
+        with open(twitter_ids_filename) as f:
+            start = str(json.load(f)["most_recent"])
+            year, month, day = (int(x) for x in start.split("-"))
+            start = datetime.datetime(year, month, day)
+
     days = (end - start).days + 1
     id_selector = '.time a.tweet-timestamp'
     tweet_selector = 'li.js-stream-item'
     ids = []
-
     print("Scraping from {} to present".format(str(start)[:10]))
     by = 31  # month at a time
     for __ in range(days)[::by]:
@@ -81,16 +87,17 @@ def scrape(user, start, end=datetime.datetime.now()):
 
         start = increment_day(start, by)
 
+    most_recent = datetime.datetime.now().strftime("%Y-%m-%d")[:10]
     try:  # attempts to reconcile new tweets with old
         with open(twitter_ids_filename) as f:
-            all_ids = ids + json.load(f)
-            data_to_write = list(set(all_ids))
+            all_ids = ids + json.load(f)["ids"]
+            data_to_write = {"ids": list(set(all_ids)), "most_recent": most_recent}
     except IOError:  # if fails, just writes
         all_ids = ids
-        data_to_write = list(set(all_ids))
+        data_to_write = {"ids": list(set(all_ids)), "most_recent": most_recent}
 
-    with open(twitter_ids_filename, 'w') as outfile:
+    with open(twitter_ids_filename, 'wb') as outfile:
         json.dump(data_to_write, outfile)
 
-    print("found {} tweets\n".format(len(data_to_write)))
+    print("found {} tweets\n".format(len(data_to_write["ids"])))
     driver.close()

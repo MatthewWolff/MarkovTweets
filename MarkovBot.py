@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import smtplib
@@ -10,6 +11,7 @@ import tweepy
 from Tokenizer import Tokenizer, generate
 from bs4 import BeautifulSoup
 from keys import email_key
+from markov_chains import Chain
 from twitter_scraping.get_metadata import build_json
 from twitter_scraping.scrape import scrape
 
@@ -33,19 +35,29 @@ CLEAR = "\033[2J"  # clears the terminal screen
 
 
 class MarkovBot:
-    def __init__(self, api_key, other_handle, active_hours=range(24)):
+    def __init__(self, api_key, other_handle, active_hours=range(24), chain_length=6):
         # authorize
         auth = tweepy.OAuthHandler(api_key["consumer_key"], api_key["consumer_secret"])
         auth.set_access_token(api_key["access_token"], api_key["access_token_secret"])
         self.api = tweepy.API(auth)
         self.me = str(self.api.me().screen_name)
-        self.pretend = other_handle.lower()
+        self.handle = other_handle.lower()
         self.active = active_hours
-        self.folder = "bot_files/{0}/".format(self.pretend)
-        self.replied_tweets = self.folder + "{0}_replied_tweets.txt".format(self.pretend)  # custom reply file
-        self.log = self.folder + "{0}_log.txt".format(self.pretend)
-        self.corpus = self.folder + "{0}.json".format(self.pretend)
+        self.folder = "bot_files/{0}/".format(self.handle)
+        self.replied_tweets = self.folder + "{0}_replied_tweets.txt".format(self.handle)  # custom reply file
+        self.log = self.folder + "{0}_log.txt".format(self.handle)
+        self.corpus = self.folder + "{0}.json".format(self.handle)
         self.check_corpus()
+        self.chainer = Chain(self.handle, max_chains=chain_length)
+
+    def update(self):
+        scrape(self.handle, start=self.get_join_date())
+
+    def chain(self):
+        self.chainer.generate_chain()
+
+    def set_chain(self, max_chains):
+        self.chainer = Chain(self.handle, max_chains=max_chains)
 
     def check_corpus(self):
         """
@@ -57,16 +69,16 @@ class MarkovBot:
             print "no corpus.json file found - generating..."
             if not os.path.exists(self.folder):
                 os.mkdir(self.folder)
-            scrape(user=self.pretend, start=self.get_join_date())  # can add end date
-            build_json(self.api, handle=self.pretend)
-            generate(handle=self.pretend)
+            scrape(self.handle, start=self.get_join_date())  # can add end date
+            build_json(self.api, handle=self.handle)
+            generate(self.handle)
 
     def get_join_date(self):
         """
         Helper method - checks a user's twitter page for the date they joined
         :return: the "%day %month %year" a user joined
         """
-        page = urllib2.urlopen("https://twitter.com/" + self.pretend)
+        page = urllib2.urlopen("https://twitter.com/" + self.handle)
         soup = BeautifulSoup(page, "html.parser")
         date_string = str(soup.find("span", {"class": "ProfileHeaderCard-joinDateText"})["title"]).split(" - ")[1]
         date_string = str(0) + date_string if date_string[1] is " " else date_string
@@ -78,7 +90,7 @@ class MarkovBot:
         :param new_min_frequency: the minimum number of times a word must appear in the corpus to be in the vocab
         """
         print "regenerating vocab with required min frequency at %i...\n" % new_min_frequency
-        Tokenizer(occurrence_threshold=new_min_frequency).generate(self.pretend)
+        Tokenizer(occurrence_threshold=new_min_frequency).generate(self.handle)
 
     def tweet(self, text=None, at=None):
         """

@@ -52,7 +52,7 @@ class Chain:
                         next_word = self.one_word(random.random())
             output.append(next_word)
         clean = self.grammar(output)
-        print clean
+        print clean + "\n"
         return clean
 
     def get_word(self, index):
@@ -84,7 +84,7 @@ class Chain:
         chain_data = "bot_files/{0}/{0}_markov_data.json".format(self.handle)
         if self.check_markov_data() and not force_regen:  # if good enough, load
             if os.path.exists(chain_data):
-                print "retrieving chaining data..."
+                print "retrieving chaining data...\n"
                 with open(chain_data) as f:
                     return json.load(f)
 
@@ -175,7 +175,7 @@ class Chain:
         :param output: the raw output to clean and format
         :return: return a cleaned up string for output
         """
-        raw = "\n@" + self.handle + " says: " + " ".join(map(self.get_word, output))  # readable output
+        raw = "@" + self.handle + " says: " + " ".join(map(self.get_word, output))  # readable output
         raw = re.sub("(?<=[a-zA-Z0-9]) (?=\.\.\.|[.,?!])", "", raw)  # punctuation
         raw = re.sub("(?<=[.?!]) ([a-zA-Z])", lambda x: " " + x.group(1).upper(), raw)  # all other letters
         raw = re.sub(" i ", " I ", raw)  # uppercase I
@@ -195,5 +195,5 @@ class Chain:
         if not good_enough:
             with open(prev_markov, "wb") as outfile:
                 outfile.write(str(self.chain_length) + "\n")
-                os.system("chflags hidden .prev_markov")
+            os.system("chflags hidden {}".format(prev_markov))
         return good_enough

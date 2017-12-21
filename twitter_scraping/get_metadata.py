@@ -26,7 +26,7 @@ def build_json(api, handle):
     output_file = 'bot_files/{0}/{0}.json'.format(user)
 
     with open('bot_files/{0}/{0}_all_ids.json'.format(user)) as f:
-        ids = json.load(f)
+        ids = json.load(f)["ids"]
 
     # print('total tweet ids: {}'.format(len(ids)))
 
@@ -67,7 +67,7 @@ def build_json(api, handle):
         raise EmptyCorpusException("Error: No tweets were collected.")
 
     print('creating json file\n')
-    with open(output_file, 'w') as outfile:
+    with open(output_file, 'wb') as outfile:
         json.dump(results, outfile)
         import os
         os.system("say done")  # spooky
