@@ -3,6 +3,7 @@ import json
 import os
 from time import sleep
 
+import colors
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 from selenium.webdriver.common.keys import Keys
@@ -15,15 +16,15 @@ Added in command line args
 
 
 def format_day(date):
-    day = '0' + str(date.day) if len(str(date.day)) == 1 else str(date.day)
-    month = '0' + str(date.month) if len(str(date.month)) == 1 else str(date.month)
+    day = "0" + str(date.day) if len(str(date.day)) == 1 else str(date.day)
+    month = "0" + str(date.month) if len(str(date.month)) == 1 else str(date.month)
     year = str(date.year)
-    return '-'.join([year, month, day])
+    return "-".join([year, month, day])
 
 
 def form_url(user, since, until):
-    p1 = 'https://twitter.com/search?f=tweets&vertical=default&q=from%3A'
-    p2 = user + '%20since%3A' + since + '%20until%3A' + until + 'include%3Aretweets&src=typd'
+    p1 = "https://twitter.com/search?f=tweets&vertical=default&q=from%3A"
+    p2 = user + "%20since%3A" + since + "%20until%3A" + until + "include%3Aretweets&src=typd"
     return p1 + p2
 
 
@@ -41,7 +42,7 @@ def scrape(user, start, end=datetime.datetime.now()):
     driver = webdriver.Chrome()  # options are Chrome() Firefox() Safari()
 
     # don't mess with this stuff
-    twitter_ids_filename = 'bot_files/{0}/{0}_all_ids.json'.format(user)
+    twitter_ids_filename = "bot_files/{0}/{0}_all_ids.json".format(user)
     if os.path.exists(twitter_ids_filename):
         with open(twitter_ids_filename) as f:
             start = str(json.load(f)["most_recent"])
@@ -49,10 +50,10 @@ def scrape(user, start, end=datetime.datetime.now()):
             start = datetime.datetime(year, month, day)
 
     days = (end - start).days + 1
-    id_selector = '.time a.tweet-timestamp'
-    tweet_selector = 'li.js-stream-item'
+    id_selector = ".time a.tweet-timestamp"
+    tweet_selector = "li.js-stream-item"
     ids = []
-    print("Scraping from {} to present".format(str(start)[:10]))
+    print(colors.cyan("Scraping from {} to present".format(str(start)[:10])))
     by = 31  # month at a time
     for __ in range(days)[::by]:
         d1 = format_day(increment_day(start, 0))
@@ -68,22 +69,22 @@ def scrape(user, start, end=datetime.datetime.now()):
             increment = 10
 
             while len(found_tweets) >= increment:
-                # print('scrolling down to load more tweets')
-                driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+                # print("scrolling down to load more tweets")
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 sleep(delay)
                 found_tweets = driver.find_elements_by_css_selector(tweet_selector)
                 increment += 10
 
-            # print('{} tweets found, {} total'.format(len(found_tweets), len(ids)))
+            # print("{} tweets found, {} total".format(len(found_tweets), len(ids)))
 
             for tweet in found_tweets:
                 try:
-                    id = tweet.find_element_by_css_selector(id_selector).get_attribute('href').split('/')[-1]
+                    id = tweet.find_element_by_css_selector(id_selector).get_attribute("href").split("/")[-1]
                     ids.append(id)
                 except StaleElementReferenceException:
-                    print('lost element reference', tweet)
+                    print colors.red("lost element reference"), tweet
         except NoSuchElementException:
-            print('no tweets on this day')
+            print colors.red("no tweets on this day")
 
         start = increment_day(start, by)
 
@@ -99,5 +100,5 @@ def scrape(user, start, end=datetime.datetime.now()):
     with open(twitter_ids_filename, 'wb') as outfile:
         json.dump(data_to_write, outfile)
 
-    print("found {} tweets\n".format(len(data_to_write["ids"])))
+    print(colors.cyan("found {} tweets\n".format(len(data_to_write["ids"]))))
     driver.close()

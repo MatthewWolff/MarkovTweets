@@ -1,17 +1,22 @@
 import json
 import os
+import random as r
 import re
 import smtplib
 import subprocess
+import sys
 import urllib2  # for querying data to scrape
 from datetime import datetime
+from threading import Thread
 from time import sleep, strftime
 
+import colors
 import tweepy
+from MarkovChains import Chain
 from Tokenizer import Tokenizer, generate
 from bs4 import BeautifulSoup
 from keys import email_key
-from markov_chains import Chain
+from tweepy import TweepError
 from twitter_scraping.get_metadata import build_json
 from twitter_scraping.scrape import scrape
 
@@ -22,51 +27,66 @@ It is particularly efficient in its analysis of the corpus.
 Using http://trumptwitterarchive.com/ as the corpus.
 Partially inspired by https://boingboing.net/2017/11/30/correlation-between-trump-twee.html
 """
-
 # constants + terminal color codes
 TWEET_MAX_LENGTH = 280
-RED = "\033[31m"
-RESET = "\033[0m"
-BOLDWHITE = "\033[1m\033[37m"
-YELLOW = "\033[33m"
-CYAN = "\033[36m"
-PURPLE = "\033[35m"
-CLEAR = "\033[2J"  # clears the terminal screen
 
 
 class MarkovBot:
     def __init__(self, api_key, other_handle, active_hours=range(24), chain_length=6):
-        # authorize
-        auth = tweepy.OAuthHandler(api_key["consumer_key"], api_key["consumer_secret"])
-        auth.set_access_token(api_key["access_token"], api_key["access_token_secret"])
-        self.api = tweepy.API(auth)
-        self.me = str(self.api.me().screen_name)
-        self.handle = other_handle.lower()
         self.active = active_hours
+        sys.stdout.write(colors.cyan("verifying credentials"))
+        self.api, self.me, self.handle = self.verify(api_key, other_handle)
+        sys.stdout.write(colors.cyan("starting bot!\n\n"))
         self.folder = "bot_files/{0}/".format(self.handle)
-        self.replied_tweets = self.folder + "{0}_replied_tweets.txt".format(self.handle)  # custom reply file
         self.log = self.folder + "{0}_log.txt".format(self.handle)
         self.corpus = self.folder + "{0}.json".format(self.handle)
+        self.replied_tweets = self.folder + "{0}_replied_tweets.txt".format(self.handle)  # custom reply file
         self.check_corpus()
-        self.chainer = Chain(self.handle, max_chains=chain_length)
+        self.chain_maker = Chain(self.handle, max_chains=chain_length)
 
     def update(self):
         scrape(self.handle, start=self.get_join_date())
 
     def chain(self):
-        self.chainer.generate_chain()
+        self.chain_maker.generate_chain()
 
-    def set_chain(self, max_chains):
-        self.chainer = Chain(self.handle, max_chains=max_chains)
+    def set_chain(self, chain_length):
+        if chain_length > self.chain_maker.chain_length:
+            self.chain_maker = Chain(self.handle, max_chains=chain_length, force_regen=True)
+        else:
+            print colors.yellow("chain length now capped at {}...\n".format(chain_length))
+
+    def verify(self, api_key, handle):
+        thread = Thread(target=self.loading())
+        thread.daemon = True  # kill this thread if program exits
+        thread.start()  # lol
+        handle = handle.strip().lower()
+        auth = tweepy.OAuthHandler(api_key["consumer_key"], api_key["consumer_secret"])
+        auth.set_access_token(api_key["access_token"], api_key["access_token_secret"])
+        api = tweepy.API(auth)
+        try:
+            api.get_user(handle)
+        except TweepError as e:
+            err = e[:][0][0]["message"]
+            raise ValueError("Awh dang dude, you gave me something bad: {}".format(err))
+        thread.join()
+        print colors.white(" verified.")
+        return api, api.me().screen_name, handle  # api, the bot's name, the other user's name
+
+    @staticmethod
+    def loading():
+        for x in [".", ".", "."]:
+            sys.stdout.write(colors.cyan(x))
+            sys.stdout.flush()
+            sleep(0.2)
 
     def check_corpus(self):
         """
         Checks if there are pre-existing files or if they will have to be regenerated. If data needs to be scraped
         the bot will go ahead and do that and immediately generate a corpus for the collected data.
         """
-        print "starting bot!\n"
         if not os.path.exists(self.corpus):  # scrape for their tweets
-            print "no corpus.json file found - generating..."
+            print colors.red("no corpus.json file found - generating...")
             if not os.path.exists(self.folder):
                 os.mkdir(self.folder)
             scrape(self.handle, start=self.get_join_date())  # can add end date
@@ -89,22 +109,24 @@ class MarkovBot:
         Regenerates the corpus with a non-default minimum word frequency
         :param new_min_frequency: the minimum number of times a word must appear in the corpus to be in the vocab
         """
-        print "regenerating vocab with required min frequency at %i...\n" % new_min_frequency
+        if new_min_frequency < 1:
+            raise Exception(colors.red("Word frequency threshold must be greater than 0"))
+        print colors.yellow("regenerating vocab with required min frequency at {}...\n".format(new_min_frequency))
         Tokenizer(occurrence_threshold=new_min_frequency).generate(self.handle)
 
-    def tweet(self, text=None, at=None):
+    def tweet(self, tweet=None, at=None):
         """
         General tweeting method. It will divide up long bits of text into multiple messages, and return the first tweet
         that it makes. Multi-tweets (including to other people) will have second and third messages made in response
         to self.
         :param at: who the user is tweeting at
-        :param text: the text to tweet
+        :param tweet: the text to tweet
         :return: the first tweet if successful, else None
         """
-        if not text:
+        if not tweet:
             return None
 
-        num_tweets, tweets = self.divide_tweet(text, at)
+        num_tweets, tweets = self.divide_tweet(tweet, at)
         if num_tweets > 0:
             my_ret = self.api.update_status(tweets[0])
             for remaining in xrange(1, len(tweets)):
@@ -120,9 +142,9 @@ class MarkovBot:
         for status in tweepy.Cursor(self.api.user_timeline).items():
             try:
                 self.api.destroy_status(status.id)
-                print "deleted successfully"
+                print colors.white("deleted successfully")
             except tweepy.TweepError:
-                print "Failed to delete:", status.id
+                print colors.red("Failed to delete:"), status.id
 
     def is_replied(self, tweet):  # check if replied. if not, add to list and reply
         """
@@ -203,7 +225,7 @@ class MarkovBot:
 
     def check_tweets(self):
         """tweet upkeep multi-processing method"""
-        print(CYAN + "Beginning polling...\n" + RESET)
+        print(colors.cyan("Beginning polling...\n"))
         while 1:
             try:
                 for tweet in tweepy.Cursor(self.api.search, q='@{0} -filter:retweets'.format(self.me),

@@ -4,6 +4,7 @@ import math
 import os
 from time import sleep
 
+import colors
 import tweepy
 from tweepy import TweepError
 
@@ -21,14 +22,12 @@ def get_source(entry):
 
 
 def build_json(api, handle):
-    print 'beginning meta_data collection...'
+    print colors.yellow("beginning meta_data collection...")
     user = handle.lower()
-    output_file = 'bot_files/{0}/{0}.json'.format(user)
+    output_file = "bot_files/{0}/{0}.json".format(user)
 
-    with open('bot_files/{0}/{0}_all_ids.json'.format(user)) as f:
+    with open("bot_files/{0}/{0}_all_ids.json".format(user)) as f:
         ids = json.load(f)["ids"]
-
-    # print('total tweet ids: {}'.format(len(ids)))
 
     all_data = []
     start = 0
@@ -37,7 +36,7 @@ def build_json(api, handle):
     i = int(math.ceil(limit / 100))
 
     for go in range(i):
-        print('currently getting {} - {}'.format(start, end))
+        print colors.cyan("currently getting {} - {}".format(start, end))
         sleep(6)  # needed to prevent hitting API rate limit
         id_batch = ids[start:end]
         start += 100
@@ -61,12 +60,12 @@ def build_json(api, handle):
         }
         results.append(t)
 
-    print('metadata collection complete!\n')
+    print colors.cyan("metadata collection complete!\n")
 
     if len(results) is 0:
         raise EmptyCorpusException("Error: No tweets were collected.")
 
-    print('creating json file\n')
+    print colors.yellow("creating json file...\n")
     with open(output_file, 'wb') as outfile:
         json.dump(results, outfile)
         import os

@@ -6,27 +6,26 @@ import re
 class Tokenizer:
     def __init__(self, occurrence_threshold=4):
         self.dictionary = dict()  # all of the words that have been used, plus their uses
+        self.vocab = dict()  # the commonly used words, with index (thresholded and indexed at 1, respectively)
         self.full_corpus = []
         self.threshold = occurrence_threshold
         self.path = ""
-        self.vocab = dict()  # the commonly used words, with index (thresholded and indexed at 1, respectively)
 
     @staticmethod
     def clean(text):
         tw = text
         tw = re.sub("(https?://.*)|(www\..*)|(t\.co.*)|(amzn\.to.*)( |$)", "", tw)  # remove links
-        tw = re.sub("RE:", "", tw)
+        tw = re.sub("RE:|^@.+ |\(cont\)", "", tw)  # ignore @'s if it's a direct reply
         tw = re.sub("Donald J\. Trump", "", tw)
         tw = re.sub("#", "%TAG%", tw)  # hashtagging
         tw = re.sub("@|\.@", "%AT%", tw)  # @, note: it gets rid of .@'s
         tw = re.sub("\.\.\.+", "%ELLIPSE%", tw)  # collapses long ellipses
         tw = re.sub("&amp;", "%AMPERSAND%", tw)  # convert into &
         tw = re.sub("(?<=[a-zA-Z])-(?=[a-zA-Z])", "%HYPHEN%", tw)
-        tw = re.sub("(?<=[^a-zA-Z])\.( |$)", " . ", tw)  # punctuation
-        tw = re.sub("!+", " ! ", tw)  # exclamation!! (collapses)
+        tw = re.sub("(?<=[^a-zA-Z])([?!.]+)( |$)", lambda x: " " + x.group(1) + " ", tw)  # punctuation
+        # tw = re.sub("!+", " ! ", tw)  # exclamation!! (collapses extra)
         tw = re.sub("(?<=[^0-9])?,(?=[^0-9])", " , ", tw)  # non-numeric commas
-        tw = re.sub("\?+", " ? ", tw)  # question marks?? (collapses)
-        tw = re.sub("\(cont\)", "", tw)  # who does this lmao
+        # tw = re.sub("\?+", " ? ", tw)  # question marks?? (collapses extra)
         tw = re.sub("--|-|[()<>]", " ", tw)  # replace these with spaces
         tw = re.sub("[^a-zA-Z0-9,?!%&' .]", "", tw)  # replace most non alpha-numerics with nothing
         # re-instate
