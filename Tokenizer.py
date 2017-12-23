@@ -2,6 +2,8 @@
 import json
 import re
 
+import colors
+
 
 class Tokenizer:
     def __init__(self, occurrence_threshold=4):
@@ -22,7 +24,7 @@ class Tokenizer:
         tw = re.sub("\.\.\.+", "%ELLIPSE%", tw)  # collapses long ellipses
         tw = re.sub("&amp;", "%AMPERSAND%", tw)  # convert into &
         tw = re.sub("(?<=[a-zA-Z])-(?=[a-zA-Z])", "%HYPHEN%", tw)
-        tw = re.sub("(?<=[^a-zA-Z])([?!.]+)( |$)", lambda x: " " + x.group(1) + " ", tw)  # punctuation
+        tw = re.sub("(?<=[a-zA-Z])([?!.]+)( |$)", lambda x: " " + x.group(1) + " ", tw)  # punctuation
         # tw = re.sub("!+", " ! ", tw)  # exclamation!! (collapses extra)
         tw = re.sub("(?<=[^0-9])?,(?=[^0-9])", " , ", tw)  # non-numeric commas
         # tw = re.sub("\?+", " ? ", tw)  # question marks?? (collapses extra)
@@ -98,10 +100,9 @@ def generate(handle):  # verbose, static creation
     Generates the corpuses given a twitter handle
     :param handle: the handle of the account in question
     """
-    print "generating corpus for %s..." % handle
+    print colors.yellow("generating corpus for %s..." % handle)
     dat_boi = Tokenizer()
     dat_boi.generate(handle)
-    print "done"
 
 ### visual analysis
 # R commands

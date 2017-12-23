@@ -1,6 +1,5 @@
 import json
 import os
-import random as r
 import re
 import smtplib
 import subprocess
@@ -27,7 +26,7 @@ It is particularly efficient in its analysis of the corpus.
 Using http://trumptwitterarchive.com/ as the corpus.
 Partially inspired by https://boingboing.net/2017/11/30/correlation-between-trump-twee.html
 """
-# constants + terminal color codes
+# constants
 TWEET_MAX_LENGTH = 280
 
 
@@ -50,12 +49,6 @@ class MarkovBot:
     def chain(self):
         self.chain_maker.generate_chain()
 
-    def set_chain(self, chain_length):
-        if chain_length >= self.chain_maker.chain_length:
-            self.chain_maker = Chain(self.handle, max_chains=chain_length, force_regen=True, seed=self.chain_maker.seed)
-        else:
-            print colors.yellow("chain length now capped at {}...\n".format(chain_length))
-
     def verify(self, api_key, handle):
         thread = Thread(target=self.loading())
         thread.daemon = True  # kill this thread if program exits
@@ -74,7 +67,7 @@ class MarkovBot:
         print colors.white(" verified.")
         return api, api.me().screen_name, handle  # api, the bot's name, the other user's name
 
-    @staticmethod
+    @staticmethod  # hehe
     def loading():
         for x in [".", ".", "."]:
             sys.stdout.write(colors.cyan(x))
