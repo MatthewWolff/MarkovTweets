@@ -13,6 +13,7 @@ class Chain:
         random.seed(seed) if seed else random.seed()
         if max_chains < 1:
             raise ValueError("Chain length must be at least 1 (not recommended tho)")
+        self.seed = seed
         self.handle = handle
         self.chain_length = max_chains
         self.corpus, self.vocab = self.read_corpus_files()

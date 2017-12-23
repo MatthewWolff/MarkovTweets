@@ -32,7 +32,7 @@ TWEET_MAX_LENGTH = 280
 
 
 class MarkovBot:
-    def __init__(self, api_key, other_handle, active_hours=range(24), chain_length=6):
+    def __init__(self, api_key, other_handle, active_hours=range(24), chain_length=6, seed=None):
         self.active = active_hours
         sys.stdout.write(colors.cyan("verifying credentials"))
         self.api, self.me, self.handle = self.verify(api_key, other_handle)
@@ -42,7 +42,7 @@ class MarkovBot:
         self.corpus = self.folder + "{0}.json".format(self.handle)
         self.replied_tweets = self.folder + "{0}_replied_tweets.txt".format(self.handle)  # custom reply file
         self.check_corpus()
-        self.chain_maker = Chain(self.handle, max_chains=chain_length)
+        self.chain_maker = Chain(self.handle, max_chains=chain_length, seed=seed)
 
     def update(self):
         scrape(self.handle, start=self.get_join_date())
@@ -51,8 +51,8 @@ class MarkovBot:
         self.chain_maker.generate_chain()
 
     def set_chain(self, chain_length):
-        if chain_length > self.chain_maker.chain_length:
-            self.chain_maker = Chain(self.handle, max_chains=chain_length, force_regen=True)
+        if chain_length >= self.chain_maker.chain_length:
+            self.chain_maker = Chain(self.handle, max_chains=chain_length, force_regen=True, seed=self.chain_maker.seed)
         else:
             print colors.yellow("chain length now capped at {}...\n".format(chain_length))
 
@@ -65,7 +65,8 @@ class MarkovBot:
         auth.set_access_token(api_key["access_token"], api_key["access_token_secret"])
         api = tweepy.API(auth)
         try:
-            api.get_user(handle)
+
+            api.get_user(handle) if handle is "test" else api.me()  # test that API works
         except TweepError as e:
             err = e[:][0][0]["message"]
             raise ValueError("Awh dang dude, you gave me something bad: {}".format(err))
@@ -91,6 +92,9 @@ class MarkovBot:
                 os.mkdir(self.folder)
             scrape(self.handle, start=self.get_join_date())  # can add end date
             build_json(self.api, handle=self.handle)
+            generate(self.handle)
+        if not os.path.exists(self.folder + "%s_corpus.txt" % self.handle) or not os.path.exists(
+                        self.folder + "%s_vocab.txt" % self.handle):
             generate(self.handle)
 
     def get_join_date(self):
