@@ -5,28 +5,34 @@ import re
 from datetime import datetime
 from time import time
 
+import colors
+
+# constants
+TWEET_MAX_LENGTH = 280
+
 
 class Chain:
-    def __init__(self, handle, max_chains=3, seed=None, force_regen=False):
+    def __init__(self, handle, max_chains, seed=None):
         random.seed(seed) if seed else random.seed()
+        if max_chains < 1:
+            raise ValueError("Chain length must be at least 1 (not recommended tho)")
+        self.seed = seed
         self.handle = handle
         self.chain_length = max_chains
-        self.corpus, self.vocab = self.read_corpus_files(handle)
+        self.corpus, self.vocab = self.read_corpus_files()
         self.prob_distrib_one = self.survey_one_word()
-        self.corpuses = self.analyze_corpus(max_chains, force_regen=force_regen)
+        self.corpuses = self.analyze_corpus(max_chains)
         self.PERIOD = self.vocab.index(".")
         self.OOV = 0
 
-    @staticmethod
-    def read_corpus_files(handle):
+    def read_corpus_files(self):
         """
         Reads in the vocab and corpus
-        :param handle: the handle of the user whose corpus and vocab we're referencing
         :return: the requested files
         """
-        with open("bot_files/{0}/{0}_corpus.txt".format(handle), 'rb') as infile:
+        with open("bot_files/{0}/{0}_corpus.txt".format(self.handle), 'rb') as infile:
             corpus = [int(line.strip()) for line in infile]
-        with open("bot_files/{0}/{0}_vocab.txt".format(handle), 'rb') as infile:
+        with open("bot_files/{0}/{0}_vocab.txt".format(self.handle), 'rb') as infile:
             vocab = [line.strip() for line in infile]
         return corpus, vocab
 
@@ -36,14 +42,13 @@ class Chain:
         :return: A cleaned up series of sensibly-ordered words
         """
         output = [self.get_acceptable_first_word()]
-        while output[-1] is not self.PERIOD and len(output) < 75:
+        while len(str(" ".join(map(self.get_word, output)))) < TWEET_MAX_LENGTH:
             # try longest chain possible first
             hist_len = len(output[-(self.chain_length - 1):])  # get history - if not enough, grabs what it can
             history = " ".join(map(str, output[-hist_len:]))
             next_word = self.OOV
             while hist_len is not 0 and next_word is self.OOV:
-                # print "Attempting {}-chain with a history of {}".format(hist_len + 1,
-                #                                                         map(self.get_word, output[-hist_len:]))
+                # print "Trying {}-chain w/history of {}".format(hist_len + 1, map(self.get_word, output[-hist_len:]))
                 next_word = self.n_word(n=hist_len + 1, rand=random.random(), hist=history)
                 hist_len -= 1
                 history = " ".join(map(str, output[-hist_len:]))
@@ -51,8 +56,12 @@ class Chain:
                     while next_word is self.OOV:
                         next_word = self.one_word(random.random())
             output.append(next_word)
-        clean = self.grammar(output)
-        print clean + "\n"
+        try:
+            clean = self.grammar(output)
+        except NoTerminalPuncException:
+            return self.generate_chain()  # repeat until find a good enough chain #WARNING might be infinite lol
+
+        print colors.white("@" + self.handle) + colors.yellow(" says: ") + clean + "\n"
         return clean
 
     def get_word(self, index):
@@ -65,33 +74,32 @@ class Chain:
 
     def get_acceptable_first_word(self):
         """
-        Not all words are acceptable for starting a sentence
-        :return: an acceptable word
+        Not all words are acceptable for starting a sentence, so pick one that is
+        :return: an acceptable first word
         """
-        first_word = self.n_word(2, rand=random.random(), hist=self.PERIOD)
-        while self.get_word(first_word) in "?!.,OOV&/":
+        first_word = self.n_word(2, rand=random.random(), hist=self.PERIOD)  # pretend that the last "word" was period
+        while self.get_word(first_word) in "?!.,OOV&/":  # list of "words" that we don't want as the first
             first_word = self.n_word(n=2, rand=random.random(), hist=self.PERIOD)
         return first_word
 
-    def analyze_corpus(self, max_chains, force_regen):
+    def analyze_corpus(self, max_chains):
         """
-        Decides whether the corpus needs to be analyzed/re-analyzed, and does so if needed
+        Analyzes the corpuses and generates a number of word locations to use for assessing probabilities
         :param max_chains: the maximum number of links in a chain the corpus needs to be able to generate
-        :param force_regen: whether or not to force the corpus to regen (for instance, after you change the min
-            word frequency of the corpus)
-        :return:
+        :return: an array of arrays - each inner array holds key-value pairs, where the values are the index of the word
+            that appears after the key
         """
         chain_data = "bot_files/{0}/{0}_markov_data.json".format(self.handle)
-        if self.check_markov_data() and not force_regen:  # if good enough, load
+        if self.check_markov_data():  # if good enough, load
             if os.path.exists(chain_data):
-                print "retrieving chaining data...\n"
-                with open(chain_data) as f:
+                print colors.yellow("retrieving chaining data...\n")
+                with open(chain_data, "rb") as f:
                     return json.load(f)
 
-        print "analyzing corpus..."
+        print colors.yellow("analyzing corpus...")
         corpuses = [[]] * max_chains  # creates bodies of chain occurrences all at once
         corpuses[0] = self.survey_one_word()
-        print "\t1-chaining done"
+        print colors.purple("\t1-chaining done")
         for n in range(1, max_chains):
             offset = n - 1
             hash_map = dict()
@@ -104,8 +112,8 @@ class Chain:
                     else:
                         hash_map[key] = [next_ind]
             corpuses[n] = hash_map
-            print "\t%i-chaining done" % (n + 1)
-        print "\nstoring...\n"
+            print colors.purple("\t{}-chaining done".format(n + 1))
+        print colors.yellow("\nstoring...\n")
         with open(chain_data, 'wb') as outfile:
             json.dump(corpuses, outfile)
         return corpuses
@@ -113,7 +121,7 @@ class Chain:
     def survey_one_word(self):
         """
         generates a list of probabilities to reference for selecting a word from the corpus
-        :return:
+        :return: a list of probabilities that will sum to 1 when added up
         """
         prob_distrib = dict()
         for word in self.corpus:
@@ -151,7 +159,7 @@ class Chain:
 
         hist = str(hist)  # the string of ints gets parsed lol idk why
         if len(hist.split(" ")) is not n - 1:
-            raise Exception("Bad history given")
+            raise ValueError("Bad history given")
 
         hash_map = self.corpuses[n - 1]
         loci = hash_map[hist] if hist in hash_map else None
@@ -175,16 +183,44 @@ class Chain:
         :param output: the raw output to clean and format
         :return: return a cleaned up string for output
         """
-        raw = "@" + self.handle + " says: " + " ".join(map(self.get_word, output))  # readable output
-        raw = re.sub("(?<=[a-zA-Z0-9]) (?=\.\.\.|[.,?!])", "", raw)  # punctuation
-        raw = re.sub("(?<=[.?!]) ([a-zA-Z])", lambda x: " " + x.group(1).upper(), raw)  # all other letters
-        raw = re.sub(" i ", " I ", raw)  # uppercase I
-        return re.sub("(?<=says: )([a-z])", lambda x: x.group(1).upper(), raw)  # first letter of sentence
+        # make the tweet come to a logical end
+        words_long = " ".join(map(self.get_word, output))  # readable output
+        words = words_long[:TWEET_MAX_LENGTH]  # truncate
+        while len(words) > 0 and (words[-1] not in "!?" and words[-3:] not in "..." and not self.is_real_period(words)):
+            words = words[:-1]  # remove characters until it's a good ending point
+        # clean up weird spacing
+        clean = words
+        clean = re.sub("(?<=[a-zA-Z0-9.]) (?=\.\.\.|[.,?!])|, ,|, ?\.|& \.| (?='s)", "", clean)  # punctuation
+        clean = re.sub("(?<=[.?!]) ([a-zA-Z])", lambda x: " " + x.group(1).upper(), clean)  # first letter after punct.
+        clean = re.sub(" {2}", " ", clean)
+        clean = re.sub(" i[,;!]? ", " I ", clean)  # uppercase I
+        clean = re.sub("^([a-z])", lambda x: x.group(1).upper(), clean)  # first letter of tweet
+        clean = re.sub("(?<=[. ])([a-z])(?=\.)", lambda x: x.group(1).upper(), clean)  # capitalize acronyms!
+        # check mistakes
+        if len(re.findall("OOV | OOV", clean)) is not 0:
+            clean = re.sub("OOV | OOV", "", clean)
+            print colors.red("removing OOV occurrences... :(")
+        if len(clean) is 0:
+            raise NoTerminalPuncException("Could not terminate %s" % words_long)
+        return clean
+
+    @staticmethod
+    def is_real_period(words):
+        """
+        Can't rely on any period to actually terminate a sentence, so this method will check if it does
+        :param words: the entire tweet to check
+        :return: True if the last character of the tweet is a terminal period
+        """
+        if words[-1] is not "." or words[-1] is " ":
+            return False
+        return len(re.findall("[. ][a-zA-Z]\.", words[-3:])) is 0
 
     def check_markov_data(self):
         """
-        Checks to see if the previous markov_data (if it exists) had the same number of chains)
-        :return: Whether True if markov_data is acceptable, false if it needs to be regenerated
+        In order to keep track of the number of chains used to produce markove data (without reading in the entire
+        file and checking the length of the object), we simply print a small file and then hide it.
+        This method checks to see if the previous markov_data (if it exists) had the same number of chains
+        :return: True if markov_data is acceptable, false if it needs to be regenerated
         """
         prev_markov = "bot_files/{0}/.prev_markov".format(self.handle)
         good_enough = False
@@ -197,3 +233,8 @@ class Chain:
                 outfile.write(str(self.chain_length) + "\n")
             os.system("chflags hidden {}".format(prev_markov))
         return good_enough
+
+
+class NoTerminalPuncException(Exception):
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
