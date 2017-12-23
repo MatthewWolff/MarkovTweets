@@ -1,4 +1,5 @@
-Makefile
 keys.py
 *.pyc
-bot_files/test/*
+**/*.pyc
+bot_files/**/*_markov_data.json
+bot_files/test/Archive.zip
