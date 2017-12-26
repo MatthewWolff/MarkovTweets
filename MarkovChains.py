@@ -36,13 +36,13 @@ class Chain:
             vocab = [line.strip() for line in infile]
         return corpus, vocab
 
-    def generate_chain(self):
+    def generate_chain(self, max_length=TWEET_MAX_LENGTH):
         """
         Generates a series of sensibly-ordered words
         :return: A cleaned up series of sensibly-ordered words
         """
         output = [self.get_acceptable_first_word()]
-        while len(str(" ".join(map(self.get_word, output)))) < TWEET_MAX_LENGTH:
+        while len(str(" ".join(map(self.get_word, output)))) < max_length:
             # try longest chain possible first
             hist_len = len(output[-(self.chain_length - 1):])  # get history - if not enough, grabs what it can
             history = " ".join(map(str, output[-hist_len:]))
@@ -60,8 +60,6 @@ class Chain:
             clean = self.grammar(output)
         except NoTerminalPuncException:
             return self.generate_chain()  # repeat until find a good enough chain #WARNING might be infinite lol
-
-        print colors.white("@" + self.handle) + colors.yellow(" says: ") + clean + "\n"
         return clean
 
     def get_word(self, index):
@@ -89,12 +87,14 @@ class Chain:
         :return: an array of arrays - each inner array holds key-value pairs, where the values are the index of the word
             that appears after the key
         """
-        chain_data = "bot_files/{0}/{0}_markov_data.json".format(self.handle)
-        if self.check_markov_data():  # if good enough, load
-            if os.path.exists(chain_data):
-                print colors.yellow("retrieving chaining data...\n")
-                with open(chain_data, "rb") as f:
-                    return json.load(f)
+        # NOTE: It seems more time efficient to just generate new chaining data, as bringing a 50-120MB file into
+        #   memory doesn't seem to be too quick in comparison
+        # chain_data = "bot_files/{0}/{0}_markov_data.json".format(self.handle)
+        # if self.check_markov_data():  # if good enough, load
+        #     if os.path.exists(chain_data):
+        #         print colors.yellow("retrieving chaining data...\n")
+        #         with open(chain_data, "rb") as f:
+        #             return json.load(f)
 
         print colors.yellow("analyzing corpus...")
         corpuses = [[]] * max_chains  # creates bodies of chain occurrences all at once
@@ -113,9 +113,9 @@ class Chain:
                         hash_map[key] = [next_ind]
             corpuses[n] = hash_map
             print colors.purple("\t{}-chaining done".format(n + 1))
-        print colors.yellow("\nstoring...\n")
-        with open(chain_data, 'wb') as outfile:
-            json.dump(corpuses, outfile)
+        # print colors.yellow("\nstoring...\n")
+        # with open(chain_data, 'wb') as outfile:
+        #     json.dump(corpuses, outfile)
         return corpuses
 
     def survey_one_word(self):
