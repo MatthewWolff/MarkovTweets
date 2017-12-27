@@ -33,7 +33,7 @@ def build_json(api, handle):
     start = 0
     end = 100
     limit = len(ids)
-    i = int(math.ceil(limit / 100))
+    i = int(math.ceil(limit / 100.0))
 
     for go in range(i):
         print colors.cyan("currently getting {} - {}".format(start, end))

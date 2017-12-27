@@ -20,75 +20,128 @@ from twitter_scraping.get_metadata import build_json
 from twitter_scraping.scrape import scrape
 
 """
-This is a bot that uses markov chaining on the corpus of tweets made by @realDonaldDrumpf
-It utilizes markov chains of up to 4 words longs.
+This is a bot that uses markov chaining to generate tweets when given a twitter user's handle
 It is particularly efficient in its analysis of the corpus.
-Using http://trumptwitterarchive.com/ as the corpus.
+Using http://trumptwitterarchive.com/ as the original source of tweets from the president (includes deleted).
 Partially inspired by https://boingboing.net/2017/11/30/correlation-between-trump-twee.html
 """
 # constants
 TWEET_MAX_LENGTH = 280
+MIN_TWEET_LENGTH = 30  # arbitrary
 
 
 class MarkovBot:
-    def __init__(self, api_key, other_handle, active_hours=range(24), chain_length=6, seed=None):
+    def __init__(self, api_key, other_handle, active_hours=range(24), max_chains=6,
+                 min_word_freq=4, seed=None, scrape_from=None):
         self.active = active_hours
-        sys.stdout.write(colors.cyan("verifying credentials"))
-        self.api, self.me, self.handle = self.verify(api_key, other_handle)
-        sys.stdout.write(colors.cyan("starting bot!\n\n"))
+        self.api, self.me, self.handle, self.fancy_handle = self.verify(api_key, other_handle)
         self.folder = "bot_files/{0}/".format(self.handle)
         self.log = self.folder + "{0}_log.txt".format(self.handle)
         self.corpus = self.folder + "{0}.json".format(self.handle)
         self.replied_tweets = self.folder + "{0}_replied_tweets.txt".format(self.handle)  # custom reply file
-        self.check_corpus()
-        self.chain_maker = Chain(self.handle, max_chains=chain_length, seed=seed)
-
-    def update(self):
-        scrape(self.handle, start=self.get_join_date())
-
-    def chain(self):
-        self.chain_maker.generate_chain()
+        self.tokenizer = self.check_corpus(scrape_from, min_word_freq)
+        self.chain_maker = Chain(self.handle, max_chains=max_chains, seed=seed)
 
     def verify(self, api_key, handle):
-        thread = Thread(target=self.loading())
+        """
+        Verifies that the user has valid credentials for accessing Tweepy API
+        :param api_key: a python dictionary object containing a "consumer_key","consumer_secret","access_token"
+            and "access_token_secret", in no particular order
+        :param handle: the handle of the twitter user that the bot operator wishes to mimic
+        :return: a 4-tuple of an API object, the bot's handle, the standardized handle of the other user, and the
+            actual handle of the other user (can have uppercase letters)
+        """
+        sys.stdout.write(colors.yellow("verifying credentials"))
+        thread = Thread(target=self.loading())  # lol
         thread.daemon = True  # kill this thread if program exits
-        thread.start()  # lol
-        handle = handle.strip().lower()
+        thread.start()
         auth = tweepy.OAuthHandler(api_key["consumer_key"], api_key["consumer_secret"])
         auth.set_access_token(api_key["access_token"], api_key["access_token_secret"])
         api = tweepy.API(auth)
+        handle = handle.strip().lower()  # standardize name formatting for folder name
         try:
-
-            api.get_user(handle) if handle is "test" else api.me()  # test that API works
+            # test that API works
+            who_am_i = handle if handle in "test" else api.get_user(handle).screen_name
+            me = api.me().screen_name
         except TweepError as e:
             err = e[:][0][0]["message"]
             raise ValueError("Awh dang dude, you gave me something bad: {}".format(err))
-        thread.join()
-        print colors.white(" verified.")
-        return api, api.me().screen_name, handle  # api, the bot's name, the other user's name
+        thread.join()  # lol
+        print colors.white(" verified")
+        print colors.cyan("starting up bot ") + colors.white("@" + me) + colors.cyan(" as ") + colors.white(
+            "@" + who_am_i) + colors.cyan("!\n\n")
+        return api, me, handle, who_am_i  # api, the bot's name, the other user's name, full version of user's name
+
+    def check_corpus(self, scrape_from_when, min_word_freq):
+        """
+        Checks if there are pre-existing files or if they will have to be regenerated. If data needs to be scraped
+        the bot will go ahead and do that and immediately generate a corpus for the collected data.
+        :type min_word_freq: the minimum number of times a word must appear in the corpus to be in the user's vocab
+        :param scrape_from_when: When the bot will start grabbing tweets from
+        """
+        if min_word_freq < 1:
+            raise ValueError(colors.red("Word frequency threshold must be greater than 0"))
+
+        scraped = False
+        if not os.path.exists(self.corpus):  # check for corpus file
+            print colors.red("no corpus.json file found - generating...")
+            if not os.path.exists(self.folder):  # check if they even have a folder yet
+                os.mkdir(self.folder)
+            scrape(self.handle, start=scrape_from_when if scrape_from_when else self.get_join_date())
+            build_json(self.api, handle=self.handle)
+            scraped = True
+        if scrape_from_when and not scraped:  # they already had a corpus and need a special scrape
+            scrape(self.handle, start=scrape_from_when)
+            build_json(self.api, handle=self.handle)
+        if not os.path.exists(self.folder + "%s_corpus.txt" % self.handle) or not os.path.exists(
+                        self.folder + "%s_vocab.txt" % self.handle):
+            return Tokenizer(min_word_freq).generate(self.handle)
+        # always return the Tokenizer object
+        return None if self.handle in "test" else Tokenizer(min_word_freq)  # TODO: fix
+
+    def update(self, starting=None):
+        """
+        By default, checks "{usr}_all_ids.json" for when tweets were most recently scraped, then scrapes from then until
+        the present. If no tweets were collected or not file was found, begins scraping from their join date.
+        :param starting: The date to start scraping from (FORMAT: YYYY-MM-DD)
+        """
+        if not starting:  # if not given, look from beginnign
+            starting = self.get_join_date()
+        print colors.cyan("Updating corpus.json")
+        scrape(self.handle, start=starting)
+
+    def chain(self, max_length=TWEET_MAX_LENGTH):
+        """
+        Generates and prints a sentence using Markov chains. User can specify the maximum length of the tweet lest it
+        defaults to the maximum tweet length
+        :param max_length: the maximum number of characters allowed in the tweet - by default, max tweet length
+        :return: the markov chain text that was generated
+        """
+        if max_length < MIN_TWEET_LENGTH:
+            raise ValueError(colors.red("Tweets must be larger than {} chars".format(MIN_TWEET_LENGTH)))
+        chain_text = self.chain_maker.generate_chain(max_length)
+        print colors.white("@" + self.fancy_handle) + colors.yellow(" says: ") + chain_text
+        return chain_text
+
+    def tweet_chain(self, max_length=TWEET_MAX_LENGTH, safe=False):
+        """
+        Bot issues a tweet made by markov chaining
+        :param max_length: the maximum number of characters allowed in the tweet - by default, max tweet length
+        :param safe: if True, bot will remove all "@" symbols so that twitter doesn't get mad :(
+        :return: the text of the tweet that was tweeted
+        """
+        tweet_text = self.chain_maker.generate_chain(max_length=max_length)
+        if safe:
+            tweet_text = tweet_text.replace("@", "#")  # :(
+        self.tweet(tweet_text)
+        return tweet_text
 
     @staticmethod  # hehe
     def loading():
         for x in [".", ".", "."]:
-            sys.stdout.write(colors.cyan(x))
+            sys.stdout.write(colors.yellow(x))
             sys.stdout.flush()
-            sleep(0.2)
-
-    def check_corpus(self):
-        """
-        Checks if there are pre-existing files or if they will have to be regenerated. If data needs to be scraped
-        the bot will go ahead and do that and immediately generate a corpus for the collected data.
-        """
-        if not os.path.exists(self.corpus):  # scrape for their tweets
-            print colors.red("no corpus.json file found - generating...")
-            if not os.path.exists(self.folder):
-                os.mkdir(self.folder)
-            scrape(self.handle, start=self.get_join_date())  # can add end date
-            build_json(self.api, handle=self.handle)
-            generate(self.handle)
-        if not os.path.exists(self.folder + "%s_corpus.txt" % self.handle) or not os.path.exists(
-                        self.folder + "%s_vocab.txt" % self.handle):
-            generate(self.handle)
+            sleep(0.5)
 
     def get_join_date(self):
         """
@@ -107,9 +160,9 @@ class MarkovBot:
         :param new_min_frequency: the minimum number of times a word must appear in the corpus to be in the vocab
         """
         if new_min_frequency < 1:
-            raise Exception(colors.red("Word frequency threshold must be greater than 0"))
+            raise ValueError(colors.red("Word frequency threshold must be greater than 0"))
         print colors.yellow("regenerating vocab with required min frequency at {}...\n".format(new_min_frequency))
-        Tokenizer(occurrence_threshold=new_min_frequency).generate(self.handle)
+        self.tokenizer.generate(self.handle, new_min_frequency)
 
     def tweet(self, tweet=None, at=None):
         """

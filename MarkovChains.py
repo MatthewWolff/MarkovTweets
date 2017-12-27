@@ -113,6 +113,7 @@ class Chain:
                         hash_map[key] = [next_ind]
             corpuses[n] = hash_map
             print colors.purple("\t{}-chaining done".format(n + 1))
+        print
         # print colors.yellow("\nstoring...\n")
         # with open(chain_data, 'wb') as outfile:
         #     json.dump(corpuses, outfile)
@@ -190,7 +191,7 @@ class Chain:
             words = words[:-1]  # remove characters until it's a good ending point
         # clean up weird spacing
         clean = words
-        clean = re.sub("(?<=[a-zA-Z0-9.]) (?=\.\.\.|[.,?!])|, ,|, ?\.|& \.| (?='s)", "", clean)  # punctuation
+        clean = re.sub("(?<=[a-zA-Z0-9.]) (?=\.\.\.|[.,?!])|, ,|! [.,:]|, ?\.|& \.| (?='s)", "", clean)  # punctuation
         clean = re.sub("(?<=[.?!]) ([a-zA-Z])", lambda x: " " + x.group(1).upper(), clean)  # first letter after punct.
         clean = re.sub(" {2}", " ", clean)
         clean = re.sub(" i[,;!]? ", " I ", clean)  # uppercase I

@@ -53,7 +53,7 @@ def scrape(user, start, end=datetime.datetime.now()):
     id_selector = ".time a.tweet-timestamp"
     tweet_selector = "li.js-stream-item"
     ids = []
-    print(colors.cyan("Scraping from {} to present".format(str(start)[:10])))
+    print(colors.cyan("\tscraping from {} to present".format(str(start)[:10])))
     by = 31  # month at a time
     for __ in range(days)[::by]:
         d1 = format_day(increment_day(start, 0))

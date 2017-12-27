@@ -6,7 +6,7 @@ import colors
 
 
 class Tokenizer:
-    def __init__(self, occurrence_threshold=4):
+    def __init__(self, occurrence_threshold):
         self.dictionary = dict()  # all of the words that have been used, plus their uses
         self.vocab = dict()  # the commonly used words, with index (thresholded and indexed at 1, respectively)
         self.full_corpus = []
@@ -17,25 +17,17 @@ class Tokenizer:
     def clean(text):
         tw = text
         tw = re.sub("(https?://.*)|(www\..*)|(t\.co.*)|(amzn\.to.*)( |$)", "", tw)  # remove links
-        tw = re.sub("RE:|^@.+ |\(cont\)", "", tw)  # ignore @'s if it's a direct reply
         tw = re.sub("Donald J\. Trump", "", tw)
-        tw = re.sub("#", "%TAG%", tw)  # hashtagging
-        tw = re.sub("@|\.@", "%AT%", tw)  # @, note: it gets rid of .@'s
-        tw = re.sub("\.\.\.+", "%ELLIPSE%", tw)  # collapses long ellipses
-        tw = re.sub("&amp;", "%AMPERSAND%", tw)  # convert into &
-        tw = re.sub("(?<=[a-zA-Z])-(?=[a-zA-Z])", "%HYPHEN%", tw)
+        tw = re.sub("RE:|(rt|Rt) @.+ |^@.+ |\(cont\)", "", tw)  # ignore @'s if it's a direct reply
+        tw = re.sub("\.@", "@", tw)
+        tw = re.sub("\.\.\.+", " ... ", tw)  # collapses long ellipses
+        tw = re.sub(" ?&amp; ?", " & ", tw)  # convert into &
         tw = re.sub("(?<=[a-zA-Z])([?!.]+)( |$)", lambda x: " " + x.group(1) + " ", tw)  # punctuation
-        # tw = re.sub("!+", " ! ", tw)  # exclamation!! (collapses extra)
+        tw = re.sub("!+", " ! ", tw)  # exclamation!! (collapses extra)
         tw = re.sub("(?<=[^0-9])?,(?=[^0-9])", " , ", tw)  # non-numeric commas
-        # tw = re.sub("\?+", " ? ", tw)  # question marks?? (collapses extra)
+        tw = re.sub("\?+", " ? ", tw)  # question marks?? (collapses extra)
         tw = re.sub("--|-|[()<>]", " ", tw)  # replace these with spaces
-        tw = re.sub("[^a-zA-Z0-9,?!%&' .]", "", tw)  # replace most non alpha-numerics with nothing
-        # re-instate
-        tw = re.sub("%AT%", "@", tw)
-        tw = re.sub("%ELLIPSE% ?", " ... ", tw)
-        tw = re.sub(" ?%AMPERSAND% ?", " & ", tw)
-        tw = re.sub("%HYPHEN%", "-", tw)
-        tw = re.sub("%TAG%", " #", tw)
+        tw = re.sub("[^a-zA-Z0-9,?!%@#&' .]", "", tw)  # replace most non alpha-numerics with nothing (including emoji)
         last = tw[-5:].strip()  # check to see if we need to add a period to their tweet
         if "..." not in last and "?" not in last and "!" not in last and "." not in last:
             tw += " . "
@@ -52,14 +44,13 @@ class Tokenizer:
 
     @staticmethod
     def useless(tw):
-        return tw["is_retweet"] or "Donald Trump" in tw["text"]
+        return tw["is_retweet"] or "Donald Trump" in tw["text"]  # ignore third person speech & retweets
 
     def generate_vocab(self):
         i = 0  # ranking of word frequency
         with open(self.path + "_vocab.txt", 'wb') as outfile:
-            outfile.write("\n")
             for key, value in sorted(self.dictionary.iteritems(), reverse=True, key=lambda (k, v): (v, k)):
-                if value >= self.threshold:  # ignore words used less than four times
+                if value >= self.threshold:  # ignore words used less than x times
                     i += 1
                     outfile.write("{1}\n".format(i, key, value))  # ranking, word, num_use
                     self.vocab[key] = i  # basically a normalized, thresholded dictionary
@@ -70,41 +61,51 @@ class Tokenizer:
                 if word != "":
                     try:
                         count = self.dictionary[word.lower()]
-                        output = str(self.vocab[word.lower()]) + "\n" if count >= self.threshold else "0" + "\n"
-                    except:
-                        output = str(0) + "\n"  # this word has less than 4 occurrences
+                        output = str(self.vocab[word.lower()]) + "\n" if count >= self.threshold else "0\n"
+                    except KeyError:
+                        output = "0\n"  # this word has less than 4 occurrences
                     out.write(output)
         with open("{}_readable_corpus.txt".format(self.path), "wb") as f:
             f.write(str(self.full_corpus))
 
-    def process_tweet(self):
+    def process_tweets(self):
         with open("{}.json".format(self.path), 'rb') as corpus:
-            tweets = json.loads(corpus.read())
+            tweets = json.load(corpus)
+        full_corpus = []
         for tweet in tweets:
-            if self.useless(tweet):  # ignore third person
+            if self.useless(tweet):
                 continue
             words = self.clean(tweet["text"])
             self.add_to_dict(words)
-            self.full_corpus.append(words)
+            full_corpus.append(words)
+        self.full_corpus = "".join(full_corpus)  # assemble into singe blob of text
 
-    def generate(self, handle):  # silently creates other pieces of data
+    def generate(self, handle, occurrence_threshold=None):  # silently creates other pieces of data
+        """
+        Generates the corpuses given a twitter handle
+        :param handle: the handle of the account in question
+        :param occurrence_threshold: the minimum number of times a word must appear in their dictionary to be in their vocab
+        """
+        print colors.yellow("generating corpus for {}...\n".format(handle))
+        if occurrence_threshold:  # if one was given, set it
+            self.threshold = occurrence_threshold
         self.path = "bot_files/{0}/{0}".format(handle)
-        self.process_tweet()
-        self.full_corpus = "".join(self.full_corpus)  # assemble into singe blob of text
+        self.process_tweets()
         self.generate_vocab()
         self.generate_corpus()
 
 
-def generate(handle):  # verbose, static creation
+def generate(handle, occurrence_threshold):  # verbose, static creation
     """
     Generates the corpuses given a twitter handle
     :param handle: the handle of the account in question
+    :param occurrence_threshold: the minimum number of times a word must appear in their dictionary to be in their vocab
     """
-    print colors.yellow("generating corpus for %s..." % handle)
-    dat_boi = Tokenizer()
-    dat_boi.generate(handle)
+    tokenizer = Tokenizer(occurrence_threshold=occurrence_threshold)
+    tokenizer.generate(handle)
+    return tokenizer
 
-### visual analysis
+# NOTE: visual analysis
 # R commands
 # input <- read.csv("/Users/matthew/Desktop/College/Junior/CS/CS540HW5/WARC201709/outfile.csv",header = TRUE)
 # plot(c(1:dim(input)[1]),log(input[,1]),
