@@ -97,7 +97,7 @@ class MarkovBot:
                         self.folder + "%s_vocab.txt" % self.handle):
             return Tokenizer(min_word_freq).generate(self.handle)
         # always return the Tokenizer object
-        return None if self.handle in "test" else Tokenizer(min_word_freq)  # TODO: fix
+        return None if self.handle in "test" else Tokenizer(min_word_freq).generate(self.handle)
 
     def update(self, starting=None):
         """
