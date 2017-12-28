@@ -23,7 +23,7 @@ class Chain:
         self.prob_distrib_one = self.survey_one_word()
         self.corpuses = self.analyze_corpus(max_chains)
         self.PERIOD = self.vocab.index(".")
-        self.OOV = 0
+        self.OOV = 0  # out of vocab
 
     def read_corpus_files(self):
         """
@@ -57,7 +57,7 @@ class Chain:
                         next_word = self.one_word(random.random())
             output.append(next_word)
         try:
-            clean = self.grammar(output)
+            clean = self.grammar(output, cutoff=max_length)
         except NoTerminalPuncException:
             return self.generate_chain()  # repeat until find a good enough chain #WARNING might be infinite lol
         return clean
@@ -178,7 +178,7 @@ class Chain:
             i += 1
         return i - 1
 
-    def grammar(self, output):
+    def grammar(self, output, cutoff):
         """
         Cleans up output for tweeting
         :param output: the raw output to clean and format
@@ -186,7 +186,7 @@ class Chain:
         """
         # make the tweet come to a logical end
         words_long = " ".join(map(self.get_word, output))  # readable output
-        words = words_long[:TWEET_MAX_LENGTH]  # truncate
+        words = words_long[:cutoff]  # truncate
         while len(words) > 0 and (words[-1] not in "!?" and words[-3:] not in "..." and not self.is_real_period(words)):
             words = words[:-1]  # remove characters until it's a good ending point
         # clean up weird spacing
