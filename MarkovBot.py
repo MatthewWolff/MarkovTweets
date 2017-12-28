@@ -31,8 +31,8 @@ MIN_TWEET_LENGTH = 30  # arbitrary
 
 
 class MarkovBot:
-    def __init__(self, api_key, other_handle, active_hours=range(24), max_chains=6,
-                 min_word_freq=4, seed=None, scrape_from=None):
+    def __init__(self, api_key, other_handle, active_hours=range(24), max_chains=5,
+                 min_word_freq=3, seed=None, scrape_from=None):
         self.active = active_hours  # NOTE:limited use rn
         self.api, self.me, self.handle, self.fancy_handle = self.verify(api_key, other_handle)
         self.folder = "bot_files/{0}/".format(self.handle)
@@ -69,7 +69,7 @@ class MarkovBot:
         thread.join()  # lol
         print colors.white(" verified")
         print colors.cyan("starting up bot ") + colors.white("@" + me) + colors.cyan(" as ") + colors.white(
-            "@" + who_am_i) + colors.cyan("!\n\n")
+            "@" + who_am_i) + colors.cyan("!\n")
         return api, me, handle, who_am_i  # api, the bot's name, the other user's name, full version of user's name
 
     def check_corpus(self, scrape_from_when, min_word_freq):
