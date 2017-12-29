@@ -12,13 +12,20 @@ class Tokenizer:
         self.full_corpus = []
         self.threshold = occurrence_threshold
         self.path = ""
+        self.handle = ""
 
-    @staticmethod
-    def clean(text):
-        tw = text
+    # modify this for any given tweeter's idiosyncrasies... unnecessary but helps
+    def specific_clean(self, text):
+        if self.handle in "realdonaldtrump":
+            text = re.sub("Donald J\. Trump|\(cont\)", "", text)  # realdonaldtrump, ignore when he quotes himself
+        elif self.handle in "adamschefter":
+            text = re.sub(" lb ?", "", text)  # adamschefter, ignore weights
+        return text
+
+    def clean(self, text):
+        tw = self.specific_clean(text)
         tw = re.sub("(https?://.*)|(www\..*)|(t\.co.*)|(amzn\.to.*)( |$)", "", tw)  # remove links
-        tw = re.sub("Donald J\. Trump", "", tw)
-        tw = re.sub("RE:|(rt|Rt) @.+ |^@.+ |\(cont\)", "", tw)  # ignore @'s if it's a direct reply
+        tw = re.sub("RE:|(rt|Rt) @.+ |^@.+ ", "", tw)  # ignore @'s if it's a direct reply
         tw = re.sub("\.@", "@", tw)
         tw = re.sub("\.\.\.+", " ... ", tw)  # collapses long ellipses
         tw = re.sub(" ?&amp; ?", " & ", tw)  # convert into &
@@ -89,6 +96,7 @@ class Tokenizer:
         print colors.yellow("generating corpus for {}...\n".format(handle))
         if occurrence_threshold:  # if one was given, set it
             self.threshold = occurrence_threshold
+        self.handle = handle
         self.path = "bot_files/{0}/{0}".format(handle)
         self.process_tweets()
         self.generate_vocab()

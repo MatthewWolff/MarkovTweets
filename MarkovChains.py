@@ -15,7 +15,7 @@ class Chain:
     def __init__(self, handle, max_chains, seed=None):
         random.seed(seed) if seed else random.seed()
         if max_chains < 1:
-            raise ValueError("Chain length must be at least 1 (not recommended tho)")
+            raise ValueError("Chain length must be at least 1 (1 is not recommended tho)")
         self.seed = seed
         self.handle = handle
         self.chain_length = max_chains
@@ -41,18 +41,22 @@ class Chain:
         Generates a series of sensibly-ordered words
         :return: A cleaned up series of sensibly-ordered words
         """
+
+        def _len(o):
+            return len(str(" ".join(map(self.get_word, o))))
+
         output = [self.get_acceptable_first_word()]
-        while len(str(" ".join(map(self.get_word, output)))) < max_length:
+        while _len(output) < max_length:
             # try longest chain possible first
-            hist_len = len(output[-(self.chain_length - 1):])  # get history - if not enough, grabs what it can
-            history = " ".join(map(str, output[-hist_len:]))
+            hist_len = len(output[-(self.chain_length - 1):])
+            history = " ".join(map(str, output[-hist_len:]))  # get history - if not enough, grabs what it can
             next_word = self.OOV
             while hist_len is not 0 and next_word is self.OOV:
                 # print "Trying {}-chain w/history of {}".format(hist_len + 1, map(self.get_word, output[-hist_len:]))
                 next_word = self.n_word(n=hist_len + 1, rand=random.random(), hist=history)
-                hist_len -= 1
+                hist_len -= 1  # try with highest chaining possible, then decrease
                 history = " ".join(map(str, output[-hist_len:]))
-                if next_word is self.OOV and hist_len is 0:
+                if next_word is self.OOV and hist_len is 0:  # don't stop trying until we have a usable word
                     while next_word is self.OOV:
                         next_word = self.one_word(random.random())
             output.append(next_word)
@@ -84,11 +88,11 @@ class Chain:
         """
         Analyzes the corpuses and generates a number of word locations to use for assessing probabilities
         :param max_chains: the maximum number of links in a chain the corpus needs to be able to generate
-        :return: an array of arrays - each inner array holds key-value pairs, where the values are the index of the word
-            that appears after the key
+        :return: an array of arrays - each inner array holds key-value pairs, where the key is a history of words, and
+            and the value is the index of the word that appears subsequently
         """
-        # NOTE: It seems more time efficient to just generate new chaining data, as bringing a 50-120MB file into
-        #   memory doesn't seem to be too quick in comparison
+        # # NOTE: It seems more time efficient to just generate new chaining data, as bringing a 50-120MB file into
+        # #     memory doesn't seem to be too quick in comparison
         # chain_data = "bot_files/{0}/{0}_markov_data.json".format(self.handle)
         # if self.check_markov_data():  # if good enough, load
         #     if os.path.exists(chain_data):
@@ -101,27 +105,17 @@ class Chain:
         corpuses[0] = self.survey_one_word()
         print colors.purple("\t1-chaining done")
         for n in range(1, max_chains):
-            offset = n - 1
-            hash_map = dict()
-            for i, word in enumerate(self.corpus):
-                if i < (len(self.corpus) - offset):
-                    next_ind = i + offset
-                    key = " ".join(map(str, self.corpus[i:i + n]))
-                    if key in hash_map:
-                        hash_map[key].append(next_ind)
-                    else:
-                        hash_map[key] = [next_ind]
-            corpuses[n] = hash_map
-            print colors.purple("\t{}-chaining done".format(n + 1))
+            corpuses[n] = self.survey_n_words(n)
+            print colors.purple("\t%s-chaining done" % (n + 1))
         print
         # print colors.yellow("\nstoring...\n")
         # with open(chain_data, 'wb') as outfile:
         #     json.dump(corpuses, outfile)
         return corpuses
 
-    def survey_one_word(self):
+    def survey_one_word(self):  # different than survey_n_words, as is independent from any history
         """
-        generates a list of probabilities to reference for selecting a word from the corpus
+        Generates a list of probabilities to reference for selecting a word from the corpus
         :return: a list of probabilities that will sum to 1 when added up
         """
         prob_distrib = dict()
@@ -132,6 +126,25 @@ class Chain:
             else:
                 prob_distrib[word] = increment
         return prob_distrib
+
+    def survey_n_words(self, n):
+        """
+        Generates a dictionary of all possible histories and the words that occur immediately after
+        :param n: the chain length that this corpus subset will help generate
+        :return: the dictionary of histories and their subsequent words
+        """
+        offset = n - 1  # number of history words prior to the word
+        hash_map = dict()
+        for i in xrange(len(self.corpus)):
+            if i < (len(self.corpus) - offset):  # if history words go up to the last word in corpus... what comes after
+                next_ind = i + offset  # index of word after the history words... the word we'll reference later
+                key = " ".join(map(str, self.corpus[i:i + n]))  # our history words
+                # store
+                if key in hash_map:
+                    hash_map[key].append(next_ind)
+                else:
+                    hash_map[key] = [next_ind]
+        return hash_map
 
     def one_word(self, rand):
         """
@@ -181,6 +194,7 @@ class Chain:
     def grammar(self, output, cutoff):
         """
         Cleans up output for tweeting
+        :param cutoff: Tweet is limited to this many characters
         :param output: the raw output to clean and format
         :return: return a cleaned up string for output
         """
@@ -196,11 +210,11 @@ class Chain:
         clean = re.sub(" {2}", " ", clean)
         clean = re.sub(" i[,;!]? ", " I ", clean)  # uppercase I
         clean = re.sub("^([a-z])", lambda x: x.group(1).upper(), clean)  # first letter of tweet
-        clean = re.sub("(?<=[. ])([a-z])(?=\.)", lambda x: x.group(1).upper(), clean)  # capitalize acronyms!
+        clean = re.sub("(?<=[. ])([a-z])(?=\.)", lambda x: x.group(1).upper(), clean)  # capitalize initialisms!
         # check mistakes
         if len(re.findall("OOV | OOV", clean)) is not 0:
             clean = re.sub("OOV | OOV", "", clean)
-            print colors.red("removing OOV occurrences... :(")
+            print colors.red("removing OOV occurrences... :(")  # fuck
         if len(clean) is 0:
             raise NoTerminalPuncException("Could not terminate %s" % words_long)
         return clean
@@ -214,7 +228,7 @@ class Chain:
         """
         if words[-1] is not "." or words[-1] is " ":
             return False
-        return len(re.findall("[. ][a-zA-Z]\.", words[-3:])) is 0
+        return len(re.findall("[. ][a-zA-Z]\.", words[-3:])) is 0  # checks that it's not part of an initialism
 
     def check_markov_data(self):
         """
@@ -223,7 +237,7 @@ class Chain:
         This method checks to see if the previous markov_data (if it exists) had the same number of chains
         :return: True if markov_data is acceptable, false if it needs to be regenerated
         """
-        prev_markov = "bot_files/{0}/.prev_markov".format(self.handle)
+        prev_markov = "bot_files/%s/.prev_markov" % self.handle
         good_enough = False
         if os.path.exists(prev_markov):
             prev_chain_length = open(prev_markov, "rb").read()
@@ -237,5 +251,5 @@ class Chain:
 
 
 class NoTerminalPuncException(Exception):
-    def __init__(self, *args, **kwargs):
-        Exception.__init__(self, *args, **kwargs)
+    def __init__(self, *args):
+        Exception.__init__(self, *args)

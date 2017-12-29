@@ -12,7 +12,7 @@ from time import sleep, strftime
 import colors
 import tweepy
 from MarkovChains import Chain
-from Tokenizer import Tokenizer, generate
+from Tokenizer import Tokenizer
 from bs4 import BeautifulSoup
 from keys import email_key
 from tweepy import TweepError
@@ -27,7 +27,7 @@ Partially inspired by https://boingboing.net/2017/11/30/correlation-between-trum
 """
 # constants
 TWEET_MAX_LENGTH = 280
-MIN_TWEET_LENGTH = 30  # arbitrary
+MIN_TWEET_LENGTH = 15  # arbitrary
 
 
 class MarkovBot:
@@ -35,10 +35,10 @@ class MarkovBot:
                  min_word_freq=3, seed=None, scrape_from=None):
         self.active = active_hours  # NOTE:limited use rn
         self.api, self.me, self.handle, self.fancy_handle = self.verify(api_key, other_handle)
-        self.folder = "bot_files/{0}/".format(self.handle)
-        self.log = self.folder + "{0}_log.txt".format(self.handle)
-        self.corpus = self.folder + "{0}.json".format(self.handle)
-        self.replied_tweets = self.folder + "{0}_replied_tweets.txt".format(self.handle)  # custom reply file
+        self.folder = "bot_files/%s/" % self.handle
+        self.log = self.folder + "%s_log.txt" % self.handle
+        self.corpus = self.folder + "%s.json" % self.handle
+        self.replied_tweets = self.folder + "%s_replied_tweets.txt" % self.handle  # custom reply file
         self.tokenizer = self.check_corpus(scrape_from, min_word_freq)
         self.chain_maker = Chain(self.handle, max_chains=max_chains, seed=seed)
 
@@ -65,7 +65,7 @@ class MarkovBot:
             me = api.me().screen_name
         except TweepError as e:
             err = e[:][0][0]["message"]
-            raise ValueError("Awh dang dude, you gave me something bad: {}".format(err))
+            raise ValueError("Awh dang dude, you gave me something bad: %s" % err)
         thread.join()  # lol
         print colors.white(" verified")
         print colors.cyan("starting up bot ") + colors.white("@" + me) + colors.cyan(" as ") + colors.white(
@@ -81,6 +81,8 @@ class MarkovBot:
         """
         if min_word_freq < 1:
             raise ValueError(colors.red("Word frequency threshold must be greater than 0"))
+        if self.handle in "test":
+            return None  # nothing to do here
 
         scraped = False
         if not os.path.exists(self.corpus):  # check for corpus file
@@ -93,11 +95,10 @@ class MarkovBot:
         if scrape_from_when and not scraped:  # they already had a corpus and need a special scrape
             scrape(self.handle, start=scrape_from_when)
             build_json(self.api, handle=self.handle)
-        if not os.path.exists(self.folder + "%s_corpus.txt" % self.handle) or not os.path.exists(
-                        self.folder + "%s_vocab.txt" % self.handle):
-            return Tokenizer(min_word_freq).generate(self.handle)
         # always return the Tokenizer object
-        return None if self.handle in "test" else Tokenizer(min_word_freq).generate(self.handle)
+        tokenizer = Tokenizer(min_word_freq)
+        tokenizer.generate(self.handle)
+        return tokenizer
 
     def update(self, starting=None):
         """
@@ -118,7 +119,7 @@ class MarkovBot:
         :return: the markov chain text that was generated
         """
         if max_length < MIN_TWEET_LENGTH:
-            raise ValueError(colors.red("Tweets must be larger than {} chars".format(MIN_TWEET_LENGTH)))
+            raise ValueError(colors.red("Tweets must be larger than %s chars" % MIN_TWEET_LENGTH))
         chain_text = self.chain_maker.generate_chain(max_length)
         print colors.white("@" + self.fancy_handle) + colors.yellow(" says: ") + chain_text
         return chain_text
@@ -161,7 +162,7 @@ class MarkovBot:
         """
         if new_min_frequency < 1:
             raise ValueError(colors.red("Word frequency threshold must be greater than 0"))
-        print colors.yellow("regenerating vocab with required min frequency at {}...\n".format(new_min_frequency))
+        print colors.yellow("regenerating vocab with required min frequency at %s...\n" % new_min_frequency)
         self.tokenizer.generate(self.handle, new_min_frequency)
 
     def tweet(self, tweet=None, at=None):
@@ -278,7 +279,7 @@ class MarkovBot:
         print(colors.cyan("Beginning polling...\n"))
         while 1:
             try:
-                for tweet in tweepy.Cursor(self.api.search, q='@{0} -filter:retweets'.format(self.me),
+                for tweet in tweepy.Cursor(self.api.search, q="@%s -filter:retweets" % self.me,
                                            tweet_mode="extended").items():
                     respond(tweet)
             except tweepy.TweepError as e:
