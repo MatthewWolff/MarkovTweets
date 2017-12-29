@@ -14,8 +14,8 @@ TWEET_MAX_LENGTH = 280
 class Chain:
     def __init__(self, handle, max_chains, seed=None):
         random.seed(seed) if seed else random.seed()
-        if max_chains < 1:
-            raise ValueError("Chain length must be at least 1 (1 is not recommended tho)")
+        if max_chains < 2:
+            raise ValueError("Chain length must be at least 2 (two is not recommended tho)")
         self.seed = seed
         self.handle = handle
         self.chain_length = max_chains
