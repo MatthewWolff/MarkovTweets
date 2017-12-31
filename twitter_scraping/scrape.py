@@ -51,7 +51,6 @@ def generate_json(username, keys):
     tweets = []
     if r.status_code == 200:
         for tweet_json in r.json():
-            print tweet_json
             tweets.append(tweet_json)
     else:
         raise Exception("there was an issue with retrieval: %s" % r.status_code)

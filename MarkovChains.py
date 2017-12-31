@@ -209,8 +209,8 @@ class Chain:
         # clean up weird spacing
         clean = words
         clean = re.sub("(?<=[!?])( )(?=[?!])", "", clean)  # multiple terminal
-        clean = re.sub("(?<=[a-zA-Z0-9.]) (?=\.\.\.|[.,?!])|, ,|! [.,:]|, ?\.|& \.| (?='s)| : ", "", clean)  # punct.
-        clean = re.sub("(?<=[.?!]) ([a-zA-Z])", lambda x: " " + x.group(1).upper(), clean)  # first letter after punct.
+        clean = re.sub("(?<=[a-zA-Z0-9.]) (?=\.\.\.|[.,?!])|, ,|! [.,:]|, ?\.|& \.| (?='s)| : | ; ", "", clean)  # punct
+        clean = re.sub("(?<=[.?!]) ([a-zA-Z])", lambda x: " " + x.group(1).upper(), clean)  # first letter after punct
         clean = re.sub(" {2}", " ", clean)
         clean = re.sub(" i[,;!]? ", " I ", clean)  # uppercase I
         clean = re.sub("^([a-z])", lambda x: x.group(1).upper(), clean)  # first letter of tweet
