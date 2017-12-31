@@ -80,7 +80,10 @@ class Chain:
         :return: an acceptable first word
         """
         first_word = self.n_word(2, rand=random.random(), hist=self.PERIOD)  # pretend that the last "word" was period
-        while self.get_word(first_word) in "?!.,OOV&/":  # list of "words" that we don't want as the first
+        # list of "words" that we don't want as the first... don't want to @ people right away lol
+        x = 0
+        while x <= 50 and (self.get_word(first_word) in "?!.,OOV&/" or self.get_word(first_word)[0] in "@"):
+            x += 1
             first_word = self.n_word(n=2, rand=random.random(), hist=self.PERIOD)
         return first_word
 
@@ -212,9 +215,11 @@ class Chain:
         clean = re.sub("^([a-z])", lambda x: x.group(1).upper(), clean)  # first letter of tweet
         clean = re.sub("(?<=[. ])([a-z])(?=\.)", lambda x: x.group(1).upper(), clean)  # capitalize initialisms!
         # check mistakes
-        if len(re.findall("OOV | OOV", clean)) is not 0:
-            clean = re.sub("OOV | OOV", "", clean)
-            print colors.red("removing OOV occurrences... :(")  # fuck
+        if len(re.findall(" ?OOV ?", clean)) is not 0:
+            clean = re.sub(" ?OOV ?", "", clean)
+            if "." in clean[0] and "..." not in clean[:4]:
+                clean = clean[2:]
+            # print colors.red("removing OOV occurrences... :(")  # fuck
         if len(clean) is 0:
             raise NoTerminalPuncException("Could not terminate %s" % words_long)
         return clean

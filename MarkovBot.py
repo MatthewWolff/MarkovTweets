@@ -16,7 +16,6 @@ from Tokenizer import Tokenizer
 from bs4 import BeautifulSoup
 from keys import email_key
 from tweepy import TweepError
-from twitter_scraping.get_metadata import build_json
 from twitter_scraping.scrape import scrape
 
 """
@@ -33,7 +32,8 @@ MIN_TWEET_LENGTH = 15  # arbitrary
 class MarkovBot:
     def __init__(self, api_key, other_handle, active_hours=range(24), max_chains=5,
                  min_word_freq=3, seed=None, scrape_from=None):
-        self.active = active_hours  # NOTE:limited use rn
+        self.active = active_hours  # NOTE: limited use rn
+        self.keys = api_key
         self.api, self.me, self.handle, self.fancy_handle = self.verify(api_key, other_handle)
         self.folder = "bot_files/%s/" % self.handle
         self.log = self.folder + "%s_log.txt" % self.handle
@@ -67,6 +67,7 @@ class MarkovBot:
             err = e[:][0][0]["message"]
             raise ValueError("Awh dang dude, you gave me something bad: %s" % err)
         thread.join()  # lol
+
         print colors.white(" verified")
         print colors.cyan("starting up bot ") + colors.white("@" + me) + colors.cyan(" as ") + colors.white(
             "@" + who_am_i) + colors.cyan("!\n")
@@ -89,12 +90,10 @@ class MarkovBot:
             print colors.red("no corpus.json file found - generating...")
             if not os.path.exists(self.folder):  # check if they even have a folder yet
                 os.mkdir(self.folder)
-            scrape(self.handle, start=scrape_from_when if scrape_from_when else self.get_join_date())
-            build_json(self.api, handle=self.handle)
+            scrape(self.handle, self.keys, start=scrape_from_when if scrape_from_when else self.get_join_date())
             scraped = True
         if scrape_from_when and not scraped:  # they already had a corpus and need a special scrape
-            scrape(self.handle, start=scrape_from_when)
-            build_json(self.api, handle=self.handle)
+            scrape(self.handle, self.keys, start=scrape_from_when)
         # always return the Tokenizer object
         tokenizer = Tokenizer(min_word_freq)
         tokenizer.generate(self.handle)

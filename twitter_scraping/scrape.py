@@ -1,18 +1,87 @@
 import datetime
 import json
 import os
+import urllib2  # for querying data to scrape
 from time import sleep
 
 import colors
+import requests
+from bs4 import BeautifulSoup
+from get_metadata import build_json
+from requests_oauthlib import OAuth1
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 from selenium.webdriver.common.keys import Keys
 
 """
-Credit goes to https://github.com/bpb27/twitter_scraping
+Credit for selenium scraping goes to https://github.com/bpb27/twitter_scraping
 I took the source code and modified to jump through months instead of day by day. Silenced some outputs, too.
 Added in command line args
 """
+
+
+def has_less_than_3200(username):
+    page = urllib2.urlopen("https://twitter.com/" + username)
+    soup = BeautifulSoup(page, "html.parser")
+    nav_elems = soup.findAll("span", {"class": "ProfileNav-label"})
+    for elem in nav_elems:
+        if elem.text in "Tweets":
+            return int(elem.next_sibling.next_sibling.next_sibling.next_sibling["data-count"]) <= 3200
+    raise ValueError("This user is either private or simply hasn't tweeted")
+
+
+def make_tweet(tweet):
+    return {
+        "text": tweet["text"],
+        "retweet_count": tweet["retweet_count"],
+        "favorite_count": tweet["favorite_count"],
+        "id_str": tweet["id_str"],
+        "is_retweet": "retweet_status" in tweet,
+        "is_reply": tweet["in_reply_to_status_id"] if tweet["in_reply_to_status_id"] is not None else None,
+    }
+
+
+def generate_json(username, keys):
+    username = username.lower()
+    auth = OAuth1(keys["consumer_key"], keys["consumer_secret"], keys["access_token"], keys["access_token_secret"])
+    number = 3200
+    api_url = "https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name="
+    url = api_url + "{}&count={}".format(username, number)
+    r = requests.get(url, auth=auth)
+    tweets = []
+    if r.status_code == 200:
+        for tweet_json in r.json():
+            tweets.append(tweet_json)
+    else:
+        raise Exception("there was an issue with retrieval: %s" % r.status_code)
+
+    # Getting the additional pages after the first
+    last_id = tweets[len(tweets) - 1]["id"]
+    curr_id = tweets[len(tweets) - 2]["id"]  # the last tweet, aka the next one to start with
+    counter = 0
+    max_counter = 100  # (Max API calls for testing, increase later)
+    # Looping through pages of tweets until there are no new available or API limit is exceeded
+    while last_id < curr_id and counter < max_counter:
+        curr_id = last_id
+        url = api_url + "{}&count={}&max_id={}".format(username, number, curr_id - 1)
+        r = requests.get(url, auth=auth)
+        if r.status_code == 200:
+            for tweetjson in r.json():
+                tweets.append(tweetjson)
+        else:
+            handleHTTPErrorCode(r.status_code)
+        last_id = tweets[len(tweets) - 1]["id"]
+        counter += 1
+
+    print "%s tweets found" % len(tweets)
+    results = []
+    for entry in tweets:
+        results.append(make_tweet(entry))
+
+    if not os.path.exists("bot_files/%s" % username):
+        os.mkdir("bot_files/%s" % username)
+    with open("bot_files/{0}/{0}.json".format(username), "wb") as outfile:
+        json.dump(results, outfile)
 
 
 def format_day(date):
@@ -32,10 +101,21 @@ def increment_day(date, i):
     return date + datetime.timedelta(days=i)
 
 
-def scrape(user, start, end=datetime.datetime.now()):
+def scrape(user, api, start, end=datetime.datetime.now()):
+    """
+    If the user has less than 3200 tweets total, the start and end paramters will be ignored
+    :param user: the handle of the user you're trying to scrape
+    :param api: an API key object
+    :param start: the date to start scraping
+    :param end: the date to end scraping
+    """
     user = user.lower()  # pass in twitter handle
     year, month, day = (int(x) for x in start.split("-"))
     start = datetime.datetime(year, month, day)  # year, month, day
+    if has_less_than_3200(user):
+        print colors.yellow("\nuser has less than 3200, doing simple scrape...")
+        generate_json(user, api)
+        return 0
 
     # only edit these if you're having problems
     delay = 1  # time to wait on each page load before reading the page
@@ -102,3 +182,5 @@ def scrape(user, start, end=datetime.datetime.now()):
 
     print(colors.cyan("found {} tweets\n".format(len(data_to_write["ids"]))))
     driver.close()
+    build_json(user, api)
+    return 0

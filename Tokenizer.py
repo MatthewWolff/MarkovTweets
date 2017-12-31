@@ -22,10 +22,12 @@ class Tokenizer:
             text = re.sub(" lb ?", "", text)  # adamschefter, ignore weights
         return text
 
-    def clean(self, text):
-        tw = self.specific_clean(text)
+    def clean(self, tweet):
+        tw = self.specific_clean(tweet["text"])
+        if tweet["is_reply"]:  # remotve @'s from replies
+            tw = re.sub("^(@.+?( |$))+", "", tw)
         tw = re.sub("(https?://.*)|(www\..*)|(t\.co.*)|(amzn\.to.*)( |$)", "", tw)  # remove links
-        tw = re.sub("RE:|(rt|Rt) @.+ |^@.+ ", "", tw)  # ignore @'s if it's a direct reply
+        tw = re.sub("RE:|(rt|Rt) @.+ | ?RT|Rt|rt ?|^@.+ ", "", tw)  # ignore @'s if it's a direct reply
         tw = re.sub("\.@", "@", tw)
         tw = re.sub("\.\.\.+", " ... ", tw)  # collapses long ellipses
         tw = re.sub(" ?&amp; ?", " & ", tw)  # convert into &
@@ -82,7 +84,7 @@ class Tokenizer:
         for tweet in tweets:
             if self.useless(tweet):
                 continue
-            words = self.clean(tweet["text"])
+            words = self.clean(tweet)
             self.add_to_dict(words)
             full_corpus.append(words)
         self.full_corpus = "".join(full_corpus)  # assemble into singe blob of text

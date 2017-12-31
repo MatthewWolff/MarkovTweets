@@ -21,9 +21,23 @@ def get_source(entry):
         return entry["source"]
 
 
-def build_json(api, handle):
+def make_tweet(tweet):
+    return {
+        "text": tweet["text"],
+        "retweet_count": tweet["retweet_count"],
+        "favorite_count": tweet["favorite_count"],
+        "id_str": tweet["id_str"],
+        "is_retweet": "retweet_status" in tweet,
+        "is_reply": tweet["in_reply_to_status_id"] if tweet["in_reply_to_status_id"] is not None else None,
+    }
+
+
+def build_json(user, api):
     print colors.yellow("beginning meta_data collection...")
-    user = handle.lower()
+    user = user.lower()
+    auth = tweepy.OAuthHandler(api["consumer_key"], api["consumer_secret"])
+    auth.set_access_token(api["access_token"], api["access_token_secret"])
+    api = tweepy.API(auth)
     output_file = "bot_files/{0}/{0}.json".format(user)
 
     with open("bot_files/{0}/{0}_all_ids.json".format(user)) as f:
@@ -46,19 +60,8 @@ def build_json(api, handle):
             all_data.append(dict(tweet._json))
 
     results = []
-
     for entry in all_data:
-        t = {
-            # "created_at": entry["created_at"],
-            "text": entry["text"],
-            # "in_reply_to_screen_name": entry["in_reply_to_screen_name"],
-            "retweet_count": entry["retweet_count"],
-            "favorite_count": entry["favorite_count"],
-            # "source": get_source(entry),
-            "id_str": entry["id_str"],
-            "is_retweet": entry["retweeted"]
-        }
-        results.append(t)
+        results.append(make_tweet(entry))
 
     print colors.cyan("metadata collection complete!\n")
 
@@ -73,5 +76,5 @@ def build_json(api, handle):
 
 
 class EmptyCorpusException(Exception):
-    def __init__(self, *args, **kwargs):
-        Exception.__init__(self, *args, **kwargs)
+    def __init__(self, *args):
+        Exception.__init__(self, *args)
