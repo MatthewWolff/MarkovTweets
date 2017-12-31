@@ -24,20 +24,24 @@ class Tokenizer:
 
     def clean(self, tweet):
         tw = self.specific_clean(tweet["text"])
+        print tw
         # remove @'s from replies # TODO, regen trump corpus
         if self.handle not in "realdonaldtrump" and tweet["is_reply"]:
             tw = re.sub("^(@.+?( |$))+", "", tw)
         tw = re.sub("(https?://.*)|(www\..*)|(t\.co.*)|(amzn\.to.*)( |$)", "", tw)  # remove links
         tw = re.sub("RE:|(rt|Rt|RT) @.+ | ?RT|Rt ?|^@.+ ", "", tw)  # ignore @'s if it's a direct reply
         tw = re.sub("\.@", "@", tw)
-        tw = re.sub("\.\.\.+", " ... ", tw)  # collapses long ellipses
+        tw = re.sub("\n", " ", tw)
+        tw = re.sub("\.\.\.+", R" ... ", tw)  # collapses long ellipses
         tw = re.sub(" ?&amp; ?", " & ", tw)  # convert into &
         tw = re.sub("(?<=[a-zA-Z])([?!.]+)( |$)", lambda x: " " + x.group(1) + " ", tw)  # punctuation
         tw = re.sub("!+", " ! ", tw)  # exclamation!! (collapses extra)
         tw = re.sub("(?<=[^0-9])?,(?=[^0-9])", " , ", tw)  # non-numeric commas
+        tw = re.sub("&lt;", "<", tw)
+        tw = re.sub("&gt;", ">", tw)
         tw = re.sub("\?+", " ? ", tw)  # question marks?? (collapses extra)
-        tw = re.sub("--|-|[()<>]", " ", tw)  # replace these with spaces
-        tw = re.sub("[^a-zA-Z0-9,?!%@#&' .]", "", tw)  # replace most non alpha-numerics with nothing (including emoji)
+        tw = re.sub("--|-|[()]", " ", tw)  # replace these with spaces
+        tw = re.sub("[^a-zA-Z0-9,?!%@<>;:/#&' .]", "", tw)  # remove most non alpha-numerics (including emoji)
         last = tw[-5:].strip()  # check to see if we need to add a period to their tweet
         if "..." not in last and "?" not in last and "!" not in last and "." not in last:
             tw += " . "

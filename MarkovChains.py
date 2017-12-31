@@ -208,7 +208,8 @@ class Chain:
             words = words[:-1]  # remove characters until it's a good ending point
         # clean up weird spacing
         clean = words
-        clean = re.sub("(?<=[a-zA-Z0-9.]) (?=\.\.\.|[.,?!])|, ,|! [.,:]|, ?\.|& \.| (?='s)", "", clean)  # punctuation
+        clean = re.sub("(?<=[!?])( )(?=[?!])", "", clean)  # multiple terminal
+        clean = re.sub("(?<=[a-zA-Z0-9.]) (?=\.\.\.|[.,?!])|, ,|! [.,:]|, ?\.|& \.| (?='s)| : ", "", clean)  # punct.
         clean = re.sub("(?<=[.?!]) ([a-zA-Z])", lambda x: " " + x.group(1).upper(), clean)  # first letter after punct.
         clean = re.sub(" {2}", " ", clean)
         clean = re.sub(" i[,;!]? ", " I ", clean)  # uppercase I
@@ -219,7 +220,7 @@ class Chain:
             clean = re.sub(" ?OOV ?", "", clean)
             if "." in clean[0] and "..." not in clean[:4]:
                 clean = clean[2:]
-            # print colors.red("removing OOV occurrences... :(")  # fuck
+                # print colors.red("removing OOV occurrences... :(")  # fuck
         if len(clean) is 0:
             raise NoTerminalPuncException("Could not terminate %s" % words_long)
         return clean
