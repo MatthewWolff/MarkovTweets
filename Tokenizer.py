@@ -24,7 +24,6 @@ class Tokenizer:
 
     def clean(self, tweet):
         tw = self.specific_clean(tweet["text"])
-        print tw
         # remove @'s from replies # TODO, regen trump corpus
         if self.handle not in "realdonaldtrump" and tweet["is_reply"]:
             tw = re.sub("^(@.+?( |$))+", "", tw)
