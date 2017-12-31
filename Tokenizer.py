@@ -32,6 +32,7 @@ class Tokenizer:
         tw = re.sub("RE:|(rt|Rt|RT) @.+ | ?RT|Rt ?|^@.+ ", "", tw)  # ignore @'s if it's a direct reply
         tw = re.sub("\.@", "@", tw)
         tw = re.sub("\n", " ", tw)
+        tw = re.sub(" ?#", " #", tw)
         tw = re.sub("\.\.\.+", R" ... ", tw)  # collapses long ellipses
         tw = re.sub(" ?&amp; ?", " & ", tw)  # convert into &
         tw = re.sub("(?<=[a-zA-Z])([?!.]+)( |$)", lambda x: " " + x.group(1) + " ", tw)  # punctuation

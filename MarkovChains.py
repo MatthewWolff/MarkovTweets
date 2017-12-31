@@ -82,7 +82,7 @@ class Chain:
         first_word = self.n_word(2, rand=random.random(), hist=self.PERIOD)  # pretend that the last "word" was period
         # list of "words" that we don't want as the first... don't want to @ people right away lol
         x = 0
-        while x <= 50 and (self.get_word(first_word) in "?!.,OOV&/" or self.get_word(first_word)[0] in "@"):
+        while x <= 50 and (self.get_word(first_word) in "?!.,:;OOV&/" or self.get_word(first_word)[0] in "@"):
             x += 1
             first_word = self.n_word(n=2, rand=random.random(), hist=self.PERIOD)
         return first_word
@@ -209,7 +209,9 @@ class Chain:
         # clean up weird spacing
         clean = words
         clean = re.sub("(?<=[!?])( )(?=[?!])", "", clean)  # multiple terminal
-        clean = re.sub("(?<=[a-zA-Z0-9.]) (?=\.\.\.|[.,?!])|, ,|! [.,:]|, ?\.|& \.| (?='s)| : | ; ", "", clean)  # punct
+        clean = re.sub("(?<=[a-zA-Z0-9.]) (?=\.\.\.|[.,?!])|! [.,:]|, ?\.|& \.| (?='s)| : \.?| ; ", "", clean)  # punct
+        clean = re.sub(", ,", ",", clean)
+        clean = re.sub(": \.", ":", clean)
         clean = re.sub("(?<=[.?!]) ([a-zA-Z])", lambda x: " " + x.group(1).upper(), clean)  # first letter after punct
         clean = re.sub(" {2}", " ", clean)
         clean = re.sub(" i[,;!]? ", " I ", clean)  # uppercase I
