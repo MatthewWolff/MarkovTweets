@@ -24,10 +24,11 @@ class Tokenizer:
 
     def clean(self, tweet):
         tw = self.specific_clean(tweet["text"])
-        if tweet["is_reply"]:  # remotve @'s from replies
+        # remove @'s from replies # TODO, regen trump corpus
+        if self.handle not in "realdonaldtrump" and tweet["is_reply"]:
             tw = re.sub("^(@.+?( |$))+", "", tw)
         tw = re.sub("(https?://.*)|(www\..*)|(t\.co.*)|(amzn\.to.*)( |$)", "", tw)  # remove links
-        tw = re.sub("RE:|(rt|Rt) @.+ | ?RT|Rt|rt ?|^@.+ ", "", tw)  # ignore @'s if it's a direct reply
+        tw = re.sub("RE:|(rt|Rt|RT) @.+ | ?RT|Rt ?|^@.+ ", "", tw)  # ignore @'s if it's a direct reply
         tw = re.sub("\.@", "@", tw)
         tw = re.sub("\.\.\.+", " ... ", tw)  # collapses long ellipses
         tw = re.sub(" ?&amp; ?", " & ", tw)  # convert into &

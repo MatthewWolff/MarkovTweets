@@ -33,11 +33,11 @@ u
 from
 what
 be
-as
 like
 all
 do
 cat
+as
 happy
 get
 @probirdrights
@@ -106,7 +106,6 @@ never
 his
 him
 great
-bihday
 @hermitthrush
 take
 she
@@ -143,6 +142,7 @@ girl
 ever
 down
 come
+birthday
 better
 been
 bc
@@ -227,7 +227,7 @@ baby
 @magicrealismbot
 @lilwang97
 @juicyjerrry
-@elambe34
+@elambert34
 yes
 work
 week
@@ -418,8 +418,10 @@ came
 called
 bring
 boyfriend
+bihday
 bed
 bae
+arts
 anyone
 alone
 almost
@@ -594,8 +596,8 @@ exactly
 everybody
 entire
 else's
+earth
 early
-eah
 e
 dumb
 drop
@@ -655,7 +657,7 @@ absolutely
 ..
 &gt&gt&gt&gt&gt
 #werlancers
-#turntaan
+#turntartan
 #prom2k14
 #praisethelord
 #greattogreater
@@ -690,7 +692,7 @@ warm
 wang
 walks
 vous
-voex
+vortex
 violin
 van
 valentine
@@ -730,8 +732,8 @@ store
 stole
 stem
 steel
-staing
-staed
+starting
+started
 squirrel
 spider
 spend
@@ -913,7 +915,7 @@ heres
 hereme
 here's
 heck
-hea
+heart
 hbd
 haven't
 hates
@@ -983,7 +985,7 @@ dorm
 done
 dogs
 doesnt
-diy
+dirty
 died
 detail
 deserve
@@ -1132,7 +1134,7 @@ abstract
 @gselevator
 @garyfromteenmom
 @fucktyler
-@fabringer
+@fartbringer
 @eliesaaab
 @dylansprouse
 @dril
@@ -1178,7 +1180,7 @@ abstract
 #internationalcatday
 #hoco2k14
 #greentogreener
-#eahday
+#earthday
 #cats
 #blessed
 #3ds
@@ -1214,6 +1216,7 @@ wreck
 wreathed
 wouldnt
 wouldn't
+worth
 worldyoung
 worldwide
 world's
@@ -1226,7 +1229,6 @@ wonder
 won't
 wombat
 wolffy
-woh
 wisdom
 winnie
 winky
@@ -1297,7 +1299,7 @@ visual
 vists
 visiting
 vinci
-villagestas
+villagestarts
 villagers
 viewpoint
 view
@@ -1374,11 +1376,11 @@ twerkezilselles
 twerkent
 twerk
 tweeting
+turtles
 turkey
 turing
 tupac
 tunnels
-tules
 tu
 truth
 trust
@@ -1403,15 +1405,15 @@ toying
 town
 towel
 tourists
-toured
 tough
 touches
 total
 tossing
+tortured
+tortoiseshell
 torque
 top
 tooo
-tooiseshell
 too.sincerely
 tons
 tone
@@ -1480,6 +1482,7 @@ taught
 tattoos
 tat
 tastes
+tartan
 tang
 talkin
 talents
@@ -1488,7 +1491,6 @@ taker
 tactical
 taco
 table
-taan
 t
 sza
 syndrome
@@ -1544,6 +1546,7 @@ statment
 statmant
 stathe
 stateb
+starter
 stars
 stares
 stare
@@ -1553,7 +1556,6 @@ stament
 stalistening
 stairs
 staff
-staer
 stadwelling
 staaccumulating
 st
@@ -1607,8 +1609,8 @@ smoll
 smoked
 smiles
 smell
+smart
 smaand
-sma
 sloths
 slope
 slit
@@ -1658,7 +1660,7 @@ shocking
 shiver
 shitty
 shitting
-shis
+shirts
 shiny
 shins
 shining
@@ -1789,8 +1791,8 @@ resembles
 research
 rescue
 repou
+reportedly
 repoer
-repoedly
 replicate
 replace
 remove
@@ -1835,7 +1837,7 @@ quote
 quiet
 questions
 quest
-quaer
+quarter
 putting
 puts
 pushin
@@ -1953,7 +1955,6 @@ pei
 peeple
 peeces
 peanutbutta
-pay
 patrick's
 paths
 pathetic
@@ -1962,6 +1963,7 @@ pastry
 pastel.
 past
 pas
+party
 parked
 park
 pap
@@ -1977,7 +1979,7 @@ packet
 owns
 overweight
 overslept
-overexeion
+overexertion
 overdramatic
 ov
 outskates
@@ -2078,6 +2080,7 @@ moving
 movements
 mountain
 mother
+mortals
 morn
 moremy
 morbidly
@@ -2090,7 +2093,6 @@ modern
 model
 mockingbird
 moans
-moals
 mitochondria
 missing
 minor
@@ -2310,7 +2312,7 @@ inspiring
 insomnia
 injured
 inhiskips
-inheycawheels
+inheycartwheels
 inhabitants
 inferiority
 indoctrnat
@@ -2415,16 +2417,16 @@ heist
 height
 heelflip
 hed
-heawhole
 heave
 heathat
-heas,
-heas
+heartwhole
+hearts,
+hearts
+hearted
+heartbreak
 hearing
 healthy
 health
-heaed
-heabreak
 he'll
 he'd
 hd
@@ -2546,7 +2548,8 @@ france
 franais
 fr
 foxes
-foune
+fortune
+fortnight
 fornicating
 form
 forgotten
@@ -2557,7 +2560,6 @@ foreign
 force
 fools
 fooling
-fonight
 fold
 foil
 fo
@@ -2567,7 +2569,7 @@ florence
 floor
 flood
 float
-fliing
+flirting
 flight
 flies
 flicked
@@ -2604,13 +2606,13 @@ fever
 fetty
 fettuccini
 festive
+fertilized
 ferraris
 feral
 female
 felt
 fell
 feline
-feilized
 feels
 fedora
 feathers
@@ -2703,7 +2705,7 @@ elaborate
 eight
 ego
 egg
-effo
+effort
 effective
 education
 editors
@@ -2770,7 +2772,7 @@ divine
 ditched
 distressed
 distractedwander
-distoed
+distorted
 distinguish
 distant
 distan
@@ -2795,7 +2797,7 @@ destruction
 destroy
 design
 derive
-depoed
+deported
 depicts
 deny
 demographic
@@ -2858,7 +2860,7 @@ crab
 cowsherd
 covers
 cover
-couroom
+courtroom
 couple
 countryd
 countryasian
@@ -2903,7 +2905,7 @@ communications
 commie
 commemorate
 comme
-comfoable
+comfortable
 comedy
 combust
 combined
@@ -2954,14 +2956,15 @@ checking
 cheap
 chases
 chase
+chart
 charles
 characters
 character
 chambers
 chainz
 chains
-cha
 ch
+certain
 ceo
 central
 cells
@@ -2969,7 +2972,6 @@ cell
 celebrating
 celebrates
 celebrate
-ceain
 caturday
 caterpie
 catdead
@@ -3082,11 +3084,11 @@ blackout
 bitties
 bitcoin
 bit
+birtday
 binge
 binaryjudge
 bikes
 biden
-biday
 bffl
 between
 bet
@@ -3174,9 +3176,10 @@ astronommy
 astronaut
 assure
 assume
-assoed
+assorted
 asks
 asap
+article
 arrived
 arrested
 armikrog
@@ -3218,13 +3221,12 @@ alicia
 alcohol
 album
 ajajajajajajaj
+airport
 airpomcdonald's
-airpo
 airplane
 air
 ain't
 aimes
-aicle
 ahistory
 ahhhhhhh
 ahh
@@ -3258,7 +3260,7 @@ ability
 @yoifeellike
 @yahooanswerstxt
 @xmfdfresh
-@xboxsuppo3
+@xboxsupport3
 @worldstar
 @workwthecoach
 @wolframalpha
@@ -3272,12 +3274,12 @@ ability
 @valeriekateftw
 @vahrammuratyan
 @uwmadison
-@undeale
+@undertale
 @uncoversqhill
 @umfuckno
 @tyrabanks
+@tylerthecreator
 @tylerfbradley
-@tylehecreator
 @twitchpokemon
 @twins
 @tweetlikeagiri
@@ -3305,7 +3307,7 @@ ability
 @summerstarstyle
 @suckstosucks
 @str8pridemonth
-@stevemaintogo
+@stevemartintogo
 @stephenjmolloy
 @steamgames
 @stdney
@@ -3340,7 +3342,7 @@ ability
 @relatablequote
 @realcarrotfacts
 @ravenelysetv
-@ragenegge
+@rageneggert
 @qumhar
 @qotsa
 @qeeneiizabeth
@@ -3373,7 +3375,7 @@ ability
 @nintendocashbox
 @nickwiger
 @netflix
-@neinquaerly
+@neinquarterly
 @naomikemii
 @msoe
 @mrnellis
@@ -3405,9 +3407,9 @@ ability
 @leshai
 @leemifsud
 @landonquinney
-@kuzastan
+@kurtzastan
 @kristenc159
-@kittenswheas
+@kittenswhearts
 @killthots
 @kieraplease
 @kidcudi
@@ -3467,7 +3469,7 @@ ability
 @fakeeetiquette
 @fabulouscop
 @fabriceivara
-@expecosmotips
+@expertcosmotips
 @emrrose
 @eminem
 @emililgauskas
@@ -3504,7 +3506,7 @@ ability
 @calebtenenbaum
 @buzzfeed
 @btcslwca
-@brob3s
+@brob3rts
 @brendlewhat
 @brandugh
 @brandondudley82
@@ -3547,7 +3549,7 @@ ability
 @alemworldwide
 @adidasoriginals
 @adactivity
-@acouesan
+@acourtesan
 @academiaobscura
 @abbyng16
 @aadelz
@@ -3641,7 +3643,7 @@ ability
 #sadtweet
 #ruinshakespeare
 #reptiles
-#reformeohographe
+#reformeorthographe
 #qqykjzziwczdurw
 #putin
 #promkilt
@@ -3709,7 +3711,7 @@ ability
 #birb201
 #betterwithpets
 #bcprom2014
-#bcas
+#bcarts
 #baegoals
 #awesome
 #animalcrossing

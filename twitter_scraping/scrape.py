@@ -51,6 +51,7 @@ def generate_json(username, keys):
     tweets = []
     if r.status_code == 200:
         for tweet_json in r.json():
+            print tweet_json
             tweets.append(tweet_json)
     else:
         raise Exception("there was an issue with retrieval: %s" % r.status_code)
@@ -113,7 +114,7 @@ def scrape(user, api, start, end=datetime.datetime.now()):
     year, month, day = (int(x) for x in start.split("-"))
     start = datetime.datetime(year, month, day)  # year, month, day
     if has_less_than_3200(user):
-        print colors.yellow("\nuser has less than 3200, doing simple scrape...")
+        print colors.yellow("\nuser has less than 3200 tweets, doing simple scrape...")
         generate_json(user, api)
         return 0
 

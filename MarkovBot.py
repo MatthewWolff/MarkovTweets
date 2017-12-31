@@ -32,8 +32,8 @@ MIN_TWEET_LENGTH = 15  # arbitrary
 class MarkovBot:
     def __init__(self, api_key, other_handle, active_hours=range(24), max_chains=5,
                  min_word_freq=3, seed=None, scrape_from=None):
-        self.active = active_hours  # NOTE: limited use rn
         self.keys = api_key
+        self.active = active_hours  # NOTE: limited use rn
         self.api, self.me, self.handle, self.fancy_handle = self.verify(api_key, other_handle)
         self.folder = "bot_files/%s/" % self.handle
         self.log = self.folder + "%s_log.txt" % self.handle
@@ -120,8 +120,7 @@ class MarkovBot:
         if max_length < MIN_TWEET_LENGTH:
             raise ValueError(colors.red("Tweets must be larger than %s chars" % MIN_TWEET_LENGTH))
         chain_text = self.chain_maker.generate_chain(max_length)
-        print colors.white("@" + self.fancy_handle) + colors.yellow(" says: ") + chain_text
-        return chain_text
+        return colors.white("@" + self.fancy_handle) + colors.yellow(" says: ") + chain_text
 
     def tweet_chain(self, max_length=TWEET_MAX_LENGTH, safe=False):
         """
