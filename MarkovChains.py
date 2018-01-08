@@ -14,8 +14,6 @@ TWEET_MAX_LENGTH = 280
 class Chain:
     def __init__(self, handle, max_chains, seed=None):
         random.seed(seed) if seed else random.seed()
-        if max_chains < 2:
-            raise ValueError("Chain length must be at least 2 (two is not recommended tho)")
         self.seed = seed
         self.handle = handle
         self.chain_length = max_chains
@@ -94,6 +92,8 @@ class Chain:
         :return: an array of arrays - each inner array holds key-value pairs, where the key is a history of words, and
             and the value is the index of the word that appears subsequently
         """
+        if max_chains < 2:
+            raise ValueError("Chain length must be at least 2 (two is not recommended tho)")
         # # NOTE: It seems more time efficient to just generate new chaining data, as bringing a 50-120MB file into
         # #     memory doesn't seem to be too quick in comparison
         # chain_data = "bot_files/{0}/{0}_markov_data.json".format(self.handle)
@@ -114,6 +114,9 @@ class Chain:
         # print colors.yellow("\nstoring...\n")
         # with open(chain_data, 'wb') as outfile:
         #     json.dump(corpuses, outfile)
+
+        # for x in corpuses[2]:  # see how the data is stored
+        #     print ("\"%s\"" % x) + "\t:\t" + str(corpuses[2][x])
         return corpuses
 
     def survey_one_word(self):  # different than survey_n_words, as is independent from any history

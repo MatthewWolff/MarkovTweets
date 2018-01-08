@@ -19,7 +19,7 @@ class Tokenizer:
         if self.handle in "realdonaldtrump":
             text = re.sub("Donald J\. Trump|\(cont\)", "", text)  # realdonaldtrump, ignore when he quotes himself
         elif self.handle in "adamschefter":
-            text = re.sub(" lb ?", "", text)  # adamschefter, ignore weights
+            text = re.sub("([0-9]+| )(Lb|LB|lb) ?", "", text)  # adamschefter, ignore weights
         return text
 
     def clean(self, tweet):
@@ -32,7 +32,7 @@ class Tokenizer:
         tw = re.sub("\.@", "@", tw)
         tw = re.sub("\n", " ", tw)
         tw = re.sub(" ?#", " #", tw)
-        tw = re.sub("\.\.\.+", R" ... ", tw)  # collapses long ellipses
+        tw = re.sub("\.\.\.+", " ... ", tw)  # collapses long ellipses
         tw = re.sub(" ?&amp; ?", " & ", tw)  # convert into &
         tw = re.sub("(?<=[a-zA-Z])([?!.]+)( |$)", lambda x: " " + x.group(1) + " ", tw)  # punctuation
         tw = re.sub("!+", " ! ", tw)  # exclamation!! (collapses extra)
