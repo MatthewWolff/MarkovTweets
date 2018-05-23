@@ -9,7 +9,7 @@ It first scrapes their entire twitter timeline (even beyond the 3200 tweet limit
 *  selenium (I use a chrome webdriver)  
 *  urllib2 (for accessing pages)  
 *  bs4 (from bs4 import BeautifulSoup - for a small amount of parsing)  
-  
+
 # Example  
 ```
 starting bot!  
@@ -26,3 +26,31 @@ Beginning chain generation...
 
 @realdonaldtrump says: Would be a disaster in congress. Very weak on crime and illegal immigration, bad for gun owners and veterans and against the wall. Jones is a pelosi-schumer puppet. Roy moore will always vote with us. Vote roy moore!
 ```
+![](/slides/1.png?raw=True)  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+![](/slides/2.png?raw=True)
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+![](/slides/3.png?raw=True)
+&nbsp;  
+&nbsp;  
+![](/slides/4.png?raw=True)
+&nbsp;  
+![](/slides/5.png?raw=True)
+&nbsp;  
+![](/slides/6.png?raw=True)
+&nbsp;  
+![](/slides/7.png?raw=True)
+&nbsp;  
+![](/slides/8.png?raw=True)
+&nbsp;  
+![](/slides/9.png?raw=True)
+&nbsp;  
+![](/slides/10.png?raw=True)
+&nbsp;  
+![](/slides/11.png?raw=True)
