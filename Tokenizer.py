@@ -24,8 +24,8 @@ class Tokenizer:
 
     def clean(self, tweet):
         tw = self.specific_clean(tweet["text"])
-        # remove @'s from replies # TODO, regen trump corpus
-        if self.handle not in "realdonaldtrump" and tweet["is_reply"]:
+        # remove @'s from replies 
+        if self.handle not in "realdonaldtrump":
             tw = re.sub("^(@.+?( |$))+", "", tw)
         tw = re.sub("(https?://.*)|(www\..*)|(t\.co.*)|(amzn\.to.*)( |$)", "", tw)  # remove links
         tw = re.sub("RE:|(rt|Rt|RT) @.+ | ?RT|Rt ?|^@.+ ", "", tw)  # ignore @'s if it's a direct reply
@@ -58,7 +58,7 @@ class Tokenizer:
 
     @staticmethod
     def useless(tw):
-        return tw["is_retweet"] or "Donald Trump" in tw["text"]  # ignore third person speech & retweets
+        return "Donald Trump" in tw["text"]  # ignore third person speech & retweets
 
     def generate_vocab(self):
         i = 0  # ranking of word frequency
